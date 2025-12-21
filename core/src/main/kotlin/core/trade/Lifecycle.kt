@@ -1,9 +1,9 @@
-package com.daemonz.trade
+package com.daemonz.core.trade
 
-import com.daemonz.market.Candle
-import com.daemonz.risk.RiskConfig
-import com.daemonz.risk.RiskEngine
-import com.daemonz.signal.Signal
+import com.daemonz.core.market.Candle
+import com.daemonz.core.risk.RiskConfig
+import com.daemonz.core.risk.RiskEngine
+import com.daemonz.core.signal.Signal
 
 data class LifecycleResult(
     val newPosition: Position,

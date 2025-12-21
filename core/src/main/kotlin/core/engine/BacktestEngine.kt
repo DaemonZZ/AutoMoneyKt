@@ -1,13 +1,13 @@
-package com.daemonz.engine
+package com.daemonz.core.engine
 
-import com.daemonz.market.Candle
-import com.daemonz.risk.RiskConfig
-import com.daemonz.signal.Signal
-import com.daemonz.strategy.Strategy
-import com.daemonz.strategy.StrategyContext
-import com.daemonz.trade.Position
-import com.daemonz.trade.Trade
-import com.daemonz.trade.TradeLifecycle
+import com.daemonz.core.market.Candle
+import com.daemonz.core.risk.RiskConfig
+import com.daemonz.core.signal.Signal
+import com.daemonz.core.strategy.Strategy
+import com.daemonz.core.strategy.StrategyContext
+import com.daemonz.core.trade.Position
+import com.daemonz.core.trade.Trade
+import com.daemonz.core.trade.TradeLifecycle
 
 data class BacktestResult(
     val trades: List<Trade>,

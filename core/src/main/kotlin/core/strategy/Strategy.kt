@@ -1,7 +1,7 @@
-package com.daemonz.strategy
+package com.daemonz.core.strategy
 
-import com.daemonz.market.Candle
-import com.daemonz.signal.Signal
+import com.daemonz.core.market.Candle
+import com.daemonz.core.signal.Signal
 
 interface Strategy<P> {
     val name: String

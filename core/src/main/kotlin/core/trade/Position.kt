@@ -1,4 +1,4 @@
-package com.daemonz.trade
+package com.daemonz.core.trade
 
 sealed interface Position {
     object Flat : Position

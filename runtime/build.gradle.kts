@@ -11,6 +11,10 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation(project(":core"))
+    implementation(project(":strategies"))
+    implementation(project(":adapters"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 
 kotlin {

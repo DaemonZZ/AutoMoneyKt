@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":strategies"))
     implementation(project(":runtime"))
+    implementation(project(":adapters"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 
 kotlin {

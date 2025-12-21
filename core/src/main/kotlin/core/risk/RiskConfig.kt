@@ -1,4 +1,4 @@
-package com.daemonz.risk
+package com.daemonz.core.risk
 
 data class RiskConfig(
     val startingEquity: Double = 1000.0,

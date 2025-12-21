@@ -1,4 +1,4 @@
-package com.daemonz.trade
+package com.daemonz.core.trade
 
 enum class Side { LONG, SHORT }
 

@@ -1,4 +1,4 @@
-package com.daemonz.risk
+package com.daemonz.core.risk
 
 import kotlin.math.abs
 import kotlin.math.max

@@ -11,7 +11,6 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation(project(":core"))
 }
 
 kotlin {

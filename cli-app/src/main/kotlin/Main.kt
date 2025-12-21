@@ -1,40 +1,39 @@
 package com.daemonz
 
-import com.daemonz.engine.BacktestEngine
-import com.daemonz.market.Candle
-import com.daemonz.strategy.demo.DemoParams
-import com.daemonz.strategy.demo.EmaAtrDemoStrategy
+import com.daemonz.adapters.exchange.FakeExchangeAdapter
+import com.daemonz.core.market.Candle
+import com.daemonz.runtime.BotRunner
+import com.daemonz.runtime.BotSpec
+import com.daemonz.runtime.EventSink
+import com.daemonz.runtime.RunMode
+import com.daemonz.runtime.RuntimeEvent
+import com.daemonz.core.strategy.demo.DemoParams
+import com.daemonz.core.strategy.demo.EmaAtrDemoStrategy
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-fun main() {
-    val candles = generateFakeCandles(800)
+fun main(args: Array<String>) {
+    val symbol = args.firstOrNull() ?: "BTCUSDT"
 
-    val params = DemoParams(
-        emaFast = 20,
-        emaSlow = 50,
-        atrPeriod = 14,
-        minAtrPct = 0.0015,
-        tpAtr = 2.0,
-        slAtr = 1.5
-    )
-
-    val strategy = EmaAtrDemoStrategy(params)
-    val engine = BacktestEngine()
-
-    val result = engine.run(
-        symbol = "BTCUSDT",
-        candles = candles,
-        strategy = strategy,
-        params = params
-    )
-
-    println("Strategy: ${strategy.name}")
-    println("Trades: ${result.trades.size}")
-    println("Ending Equity: ${"%.2f".format(result.endingEquity)}")
-    println("Sample trades:")
-    result.trades.take(5).forEach { println(it) }
+    val exchange = FakeExchangeAdapter()
+    val sink = EventSink { e ->
+        when (e) {
+            is RuntimeEvent.Log -> println(e.line)
+            is RuntimeEvent.TradeClosed -> println("CLOSED: ${e.trade}")
+            is RuntimeEvent.Status -> println("STATUS: ${e.symbol} running=${e.running}")
+        }
+    }
+    runBlocking {
+        val runner = BotRunner(exchange, sink)
+        val strategy = EmaAtrDemoStrategy(DemoParams())
+        val spec = BotSpec(symbol = symbol, mode = RunMode.PAPER)
+        runner.runPaper(spec, strategy, DemoParams())
+        println("Press ENTER to stop...")
+        readlnOrNull()
+        runner.stop()
+    }
 }
 
 /** Fake OHLCV để test core */

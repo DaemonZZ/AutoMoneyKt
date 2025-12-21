@@ -1,6 +1,6 @@
-package com.daemonz.indicator
+package com.daemonz.core.indicator
 
-import com.daemonz.market.Candle
+import com.daemonz.core.market.Candle
 import kotlin.math.abs
 import kotlin.math.max
 

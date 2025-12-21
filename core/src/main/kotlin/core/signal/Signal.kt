@@ -1,4 +1,4 @@
-package com.daemonz.signal
+package com.daemonz.core.signal
 
 sealed interface Signal {
     data class EnterLong(

@@ -1,6 +1,6 @@
-package com.daemonz.strategy
+package com.daemonz.core.strategy
 
-import com.daemonz.trade.Position
+import com.daemonz.core.trade.Position
 
 data class StrategyContext(
     val symbol: String,

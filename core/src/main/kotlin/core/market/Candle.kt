@@ -1,4 +1,4 @@
-package com.daemonz.market
+package com.daemonz.core.market
 
 data class Candle(
     val t: Long,            // epoch millis

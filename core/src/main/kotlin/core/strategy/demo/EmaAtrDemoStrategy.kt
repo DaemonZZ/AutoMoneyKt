@@ -1,12 +1,12 @@
-package com.daemonz.strategy.demo
+package com.daemonz.core.strategy.demo
 
-import com.daemonz.indicator.Atr
-import com.daemonz.indicator.Ema
-import com.daemonz.market.Candle
-import com.daemonz.signal.Signal
-import com.daemonz.strategy.Strategy
-import com.daemonz.strategy.StrategyContext
-import com.daemonz.trade.Position
+import com.daemonz.core.indicator.Atr
+import com.daemonz.core.indicator.Ema
+import com.daemonz.core.market.Candle
+import com.daemonz.core.signal.Signal
+import com.daemonz.core.strategy.Strategy
+import com.daemonz.core.strategy.StrategyContext
+import com.daemonz.core.trade.Position
 import kotlin.math.abs
 
 data class DemoParams(

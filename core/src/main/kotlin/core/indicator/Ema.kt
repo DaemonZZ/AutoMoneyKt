@@ -1,4 +1,4 @@
-package com.daemonz.indicator
+package com.daemonz.core.indicator
 
 /**
  * Streaming EMA.
