@@ -3,7 +3,7 @@ plugins {
 }
 rootProject.name = "AutoMoneyKt"
 include("core")
-include("stategies")
 include("adapters")
 include("runtime")
 include("cli-app")
+include("strategies")

@@ -12,7 +12,7 @@
             <option value="$PROJECT_DIR$/cli-app" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/runtime" />
-            <option value="$PROJECT_DIR$/stategies" />
+            <option value="$PROJECT_DIR$/strategies" />
           </set>
         </option>
       </GradleProjectSettings>
