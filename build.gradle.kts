@@ -18,6 +18,17 @@ dependencies {
     implementation(project(":strategies"))
     implementation(project(":core"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.9.0")
+
+    // Coroutines + JavaFX dispatcher
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.9.0")
+
+    // DI
+    implementation(platform("io.insert-koin:koin-bom:4.1.1"))
+    implementation("io.insert-koin:koin-core")
+
+    // Logging (optional)
+    implementation("org.slf4j:slf4j-simple:2.0.16")
 }
 application {
     mainClass.set("com.daemonz.App")
