@@ -11,8 +11,7 @@
         <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <children>
                 <Label text="Mode"/>
-                <ChoiceBox prefWidth="150.0"/>
-                <Button mnemonicParsing="false" text="Button"/>
+                <ChoiceBox fx:id="modeChoice" prefWidth="150.0"/>
             </children>
         </HBox>
     </top>

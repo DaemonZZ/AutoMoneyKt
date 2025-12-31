@@ -1,6 +1,5 @@
 package com.daemonz
 
-import com.daemonz.adapters.exchange.FakeExchangeAdapter
 import com.daemonz.core.market.Candle
 import com.daemonz.runtime.BotRunner
 import com.daemonz.runtime.BotSpec
@@ -15,25 +14,7 @@ import kotlin.random.Random
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 fun main(args: Array<String>) {
-    val symbol = args.firstOrNull() ?: "BTCUSDT"
 
-    val exchange = FakeExchangeAdapter()
-    val sink = EventSink { e ->
-        when (e) {
-            is RuntimeEvent.Log -> println(e.line)
-            is RuntimeEvent.TradeClosed -> println("CLOSED: ${e.trade}")
-            is RuntimeEvent.Status -> println("STATUS: ${e.symbol} running=${e.running}")
-        }
-    }
-    runBlocking {
-        val runner = BotRunner(exchange, sink)
-        val strategy = EmaAtrDemoStrategy(DemoParams())
-        val spec = BotSpec(symbol = symbol, mode = RunMode.PAPER)
-        runner.runPaper(spec, strategy, DemoParams())
-        println("Press ENTER to stop...")
-        readlnOrNull()
-        runner.stop()
-    }
 }
 
 /** Fake OHLCV để test core */

@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/adapters" />
+            <option value="$PROJECT_DIR$/app-ui" />
             <option value="$PROJECT_DIR$/cli-app" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/runtime" />

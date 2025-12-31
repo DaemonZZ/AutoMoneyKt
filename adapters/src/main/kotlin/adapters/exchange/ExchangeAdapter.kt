@@ -16,4 +16,13 @@ interface ExchangeAdapter {
     fun placeOrder(req: PlaceOrderRequest): OrderAck
 
     fun closePositionMarket(symbol: String): OrderAck
+
+    /** Kiểm tra kết nối + quyền API cơ bản */
+    fun checkConnection(): ConnectionStatus
+
+    /** Lấy số dư Futures (USDT-M) */
+    fun fetchFuturesBalances(): List<FuturesBalance>
+
+    fun fetchFuturesAccountInfo(): FuturesAccountInfo
+
 }
