@@ -1,50 +1,220 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12"
-            xmlns:fx="http://javafx.com/fxml/1">
-    <children>
-        <Pane layoutX="21.0" layoutY="14.0" prefHeight="117.0" prefWidth="561.0">
-            <children>
-                <Label layoutX="14.0" layoutY="6.0" text="Analyze"/>
-                <Label layoutX="14.0" layoutY="23.0" text="Strategy"/>
-                <ComboBox layoutX="73.0" layoutY="19.0" prefHeight="25.0" prefWidth="123.0"/>
-                <Label layoutX="214.0" layoutY="23.0" text="TF"/>
-                <ComboBox layoutX="238.0" layoutY="19.0" prefHeight="25.0" prefWidth="52.0"/>
-                <Label layoutX="309.0" layoutY="23.0" text="Lookback"/>
-                <ComboBox layoutX="367.0" layoutY="19.0" prefHeight="25.0" prefWidth="78.0"/>
-                <Label layoutX="14.0" layoutY="50.0" text="Universe"/>
-                <ComboBox layoutX="73.0" layoutY="46.0" prefHeight="25.0" prefWidth="123.0"/>
-            </children>
-        </Pane>
-        <BorderPane layoutX="15.0" layoutY="127.0" prefHeight="257.0" prefWidth="571.0">
-            <center>
-                <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <Label text="Candidates"/>
-                        <HBox prefHeight="100.0" prefWidth="200.0"/>
-                        <TableView prefHeight="200.0" prefWidth="200.0">
-                            <columns>
-                                <TableColumn prefWidth="75.0" text="C1"/>
-                                <TableColumn prefWidth="75.0" text="C2"/>
-                            </columns>
-                        </TableView>
-                    </children>
-                </VBox>
-            </center>
-            <right>
-                <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-                    <children>
-                        <VBox prefHeight="275.0" prefWidth="100.0">
-                            <children>
-                                <Label text="Detail"/>
-                            </children>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.daemonz.controller.MarketAnalyzerController">
+
+    <!-- Non-visual objects MUST be declared here -->
+    <fx:define>
+        <ToggleGroup fx:id="sourceToggleGroup"/>
+        <ToggleGroup fx:id="autoPickLogicGroup"/>
+    </fx:define>
+
+    <!-- TOP BAR -->
+    <top>
+        <VBox spacing="10" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="12" right="12" bottom="12" left="12"/>
+            </padding>
+
+            <Label text="Market Analyzer" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+            <GridPane hgap="12" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="NEVER" minWidth="90"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="180"/>
+                    <ColumnConstraints hgrow="NEVER" minWidth="90"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="120"/>
+                    <ColumnConstraints hgrow="NEVER" minWidth="90"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="120"/>
+                    <ColumnConstraints hgrow="NEVER" minWidth="90"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="140"/>
+                </columnConstraints>
+
+                <Label text="Strategy" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="strategyCombo" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Interval" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                <ComboBox fx:id="intervalCombo" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                <Label text="History" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                <ComboBox fx:id="historyCombo" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
+
+                <Label text="Mode" GridPane.rowIndex="0" GridPane.columnIndex="6"/>
+                <ComboBox fx:id="modeCombo" GridPane.rowIndex="0" GridPane.columnIndex="7"/>
+
+                <Label text="Risk %" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="riskField" promptText="1.0" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Equity" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                <TextField fx:id="equityField" promptText="10000" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="4" GridPane.columnSpan="4">
+                    <CheckBox fx:id="feesCheck" text="Fees"/>
+                    <CheckBox fx:id="slippageCheck" text="Slippage"/>
+                </HBox>
+            </GridPane>
+        </VBox>
+    </top>
+
+    <!-- CENTER: 3-PANEL SPLIT -->
+    <center>
+        <SplitPane dividerPositions="0.25, 0.69" BorderPane.alignment="CENTER">
+
+            <!-- LEFT: SYMBOL SELECTION -->
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <Label text="Symbol Selection" style="-fx-font-weight: bold;"/>
+
+                <HBox spacing="8">
+                    <ToggleButton fx:id="manualToggle" text="Manual" toggleGroup="$sourceToggleGroup" selected="true"/>
+                    <ToggleButton fx:id="autoPickToggle" text="Auto-pick" toggleGroup="$sourceToggleGroup"/>
+                </HBox>
+
+                <TextField fx:id="symbolSearchField" promptText="Search symbol..."/>
+
+                <ListView fx:id="symbolListView" VBox.vgrow="ALWAYS"/>
+
+                <HBox spacing="8">
+                    <Label fx:id="selectedCountLabel" text="Selected: 0"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="clearSelectionBtn" text="Clear"/>
+                </HBox>
+            </VBox>
+
+            <!-- CENTER: RESULTS TABLE -->
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <HBox spacing="8">
+                    <Label text="Backtest Results" style="-fx-font-weight: bold;"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="resultsCountLabel" text="0 results"/>
+                </HBox>
+
+                <TableView fx:id="resultsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colSymbol" text="Symbol" prefWidth="120"/>
+                        <TableColumn fx:id="colVerdict" text="Verdict" prefWidth="110"/>
+                        <TableColumn fx:id="colScore" text="Score" prefWidth="70"/>
+                        <TableColumn fx:id="colTrades" text="Trades" prefWidth="70"/>
+                        <TableColumn fx:id="colWinRate" text="Win Rate" prefWidth="90"/>
+                        <TableColumn fx:id="colPf" text="PF" prefWidth="70"/>
+                        <TableColumn fx:id="colMaxDd" text="Max DD" prefWidth="90"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <!-- RIGHT: RUN CONTROL -->
+            <VBox spacing="12">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <Label text="Run Control" style="-fx-font-weight: bold;"/>
+
+                <Button fx:id="analyzeBtn" text="Analyze Selected" maxWidth="Infinity"/>
+                <HBox spacing="8">
+                    <Button fx:id="cancelBtn" text="Cancel" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button fx:id="exportBtn" text="Export CSV" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+
+                <Separator/>
+
+                <Label text="Status" style="-fx-font-weight: bold;"/>
+                <ProgressBar fx:id="progressBar" prefWidth="Infinity"/>
+                <Label fx:id="statusLabel" text="Idle"/>
+                <Label fx:id="progressTextLabel" text="0/0"/>
+
+                <Separator/>
+
+                <TitledPane text="Filters" expanded="true">
+                    <content>
+                        <VBox spacing="10">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <HBox spacing="8">
+                                <Label text="Min Trades" minWidth="90"/>
+                                <Slider fx:id="minTradesSlider" min="0" max="100" value="10" HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="minTradesValueLabel" text="10"/>
+                            </HBox>
+
+                            <HBox spacing="8">
+                                <Label text="Min Score" minWidth="90"/>
+                                <Slider fx:id="minScoreSlider" min="0" max="100" value="50" HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="minScoreValueLabel" text="50"/>
+                            </HBox>
+
+                            <HBox spacing="8">
+                                <Label text="Min Volatility" minWidth="90"/>
+                                <TextField fx:id="minVolatilityField" promptText="1.5"/>
+                                <Label text=" %"/>
+                            </HBox>
+
+                            <CheckBox fx:id="hideLowSampleCheck" text="Hide low sample (&lt;10 trades)"/>
                         </VBox>
-                    </children>
-                </VBox>
-            </right>
-        </BorderPane>
-    </children>
-</AnchorPane>
+                    </content>
+                </TitledPane>
+
+
+                <TitledPane text="Auto-pick" expanded="false">
+                    <content>
+                        <VBox spacing="8">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <RadioButton fx:id="autoPickTopVolumeRadio"
+                                         text="Top by Volume"
+                                         toggleGroup="$autoPickLogicGroup"
+                                         selected="true"/>
+
+                            <RadioButton fx:id="autoPickRandomRadio"
+                                         text="Random 5 (diversity)"
+                                         toggleGroup="$autoPickLogicGroup"/>
+
+                            <RadioButton fx:id="autoPickGainersRadio"
+                                         text="Top Gainers (24h)"
+                                         toggleGroup="$autoPickLogicGroup"/>
+
+                            <Label text="Symbols are selected based on liquidity and volatility filters."
+                                   wrapText="true"
+                                   style="-fx-opacity: 0.7;"/>
+
+                            <Button fx:id="autoPickBtn" text="Pick 5 now" maxWidth="Infinity"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+
+                <TitledPane text="Exclusions" expanded="false">
+                    <content>
+                        <VBox spacing="8">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <CheckBox fx:id="excludeStablecoinsCheck" text="Stablecoins"/>
+                            <CheckBox fx:id="excludeLeveragedCheck" text="Leveraged tokens"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <Pane VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+        </SplitPane>
+    </center>
+
+</BorderPane>

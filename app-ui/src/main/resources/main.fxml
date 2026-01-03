@@ -1,39 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0"
-            prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.daemonz.controller.MainController">
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.daemonz.controller.MainController"
+            prefWidth="1100.0" prefHeight="720.0">
+
+    <fx:define>
+        <ToggleGroup fx:id="navGroup"/>
+    </fx:define>
+
+    <!-- LEFT NAV -->
     <left>
-        <VBox fx:id="navBar" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-            <children>
-                <ToggleButton fx:id="homeBtn" mnemonicParsing="false" text="Home"/>
-                <ToggleButton fx:id="analyzeBtn" mnemonicParsing="false" text="Analyze"/>
-                <ToggleButton fx:id="botseBtn" mnemonicParsing="false" text="Bots"/>
-                <ToggleButton fx:id="logsBtn" mnemonicParsing="false" text="Logs"/>
-            </children>
+        <VBox fx:id="navBar" prefWidth="220.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT"
+              style="-fx-background-color: #1e1e1e;">
+            <padding>
+                <Insets top="14" right="12" bottom="14" left="12"/>
+            </padding>
+
+            <!-- App title / section -->
+            <VBox spacing="4">
+                <Label text="AutoMoney" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                <Label text="Futures Scanner &amp; Bots" style="-fx-opacity: 0.75; -fx-text-fill: white;"/>
+            </VBox>
+
+            <Separator/>
+
+            <!-- Nav buttons (single-select) -->
+            <ToggleButton fx:id="homeBtn" text="Home" toggleGroup="$navGroup" selected="true" maxWidth="Infinity"/>
+            <ToggleButton fx:id="analyzeBtn" text="Analyze" toggleGroup="$navGroup" maxWidth="Infinity"/>
+            <ToggleButton fx:id="botseBtn" text="Bots" toggleGroup="$navGroup" maxWidth="Infinity"/>
+            <ToggleButton fx:id="logsBtn" text="Logs" toggleGroup="$navGroup" maxWidth="Infinity"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Footer hint -->
+            <Label text="Mode: --"
+                   style="-fx-opacity: 0.75; -fx-text-fill: white;"/>
         </VBox>
     </left>
+
+    <!-- CENTER CONTENT -->
     <center>
-        <StackPane fx:id="contentHost" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <StackPane fx:id="contentHost" BorderPane.alignment="CENTER">
             <BorderPane.margin>
-                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                <Insets top="12" right="12" bottom="12" left="12"/>
             </BorderPane.margin>
         </StackPane>
     </center>
+
+    <!-- STATUS BAR -->
     <bottom>
-        <HBox fx:id="statusBar" prefHeight="26.0" prefWidth="600.0" spacing="12.0">
-            <Label fx:id="lblFeed" text="Feed: --"/>
-            <Label fx:id="lblLastCandle" text="Last candle: --"/>
-            <Label fx:id="lblRunner" text="Runner: --"/>
-            <Region prefHeight="18.0" prefWidth="386.0" HBox.hgrow="ALWAYS"/>
-            <Label fx:id="lblErrors" text="Errors: 0"/>
+        <HBox fx:id="statusBar" prefHeight="34.0" spacing="12.0"
+              style="-fx-background-color: #151515; -fx-border-color: #2b2b2b; -fx-border-width: 1 0 0 0;">
             <padding>
-                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                <Insets top="8" right="12" bottom="8" left="12"/>
             </padding>
+
+            <Label fx:id="lblFeed" text="Feed: --" style="-fx-text-fill: white; -fx-opacity: 0.9;"/>
+            <Label fx:id="lblLastCandle" text="Last candle: --" style="-fx-text-fill: white; -fx-opacity: 0.9;"/>
+            <Label fx:id="lblRunner" text="Runner: --" style="-fx-text-fill: white; -fx-opacity: 0.9;"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Label fx:id="lblErrors" text="Errors: 0" style="-fx-text-fill: #ff6b6b; -fx-font-weight: bold;"/>
         </HBox>
     </bottom>
+
 </BorderPane>

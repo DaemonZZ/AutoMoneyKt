@@ -24,5 +24,7 @@ interface ExchangeAdapter {
     fun fetchFuturesBalances(): List<FuturesBalance>
 
     fun fetchFuturesAccountInfo(): FuturesAccountInfo
+    fun listTradableSymbols(): List<String>   // Futures USDT-M, trạng thái TRADING
+    fun fetchCandles(symbol: String, interval: String, limit: Int): List<Candle>
 
 }

@@ -35,6 +35,18 @@ class BinanceFuturesAdapter(
         return FuturesAccountJson.parse(json)
     }
 
+    override fun listTradableSymbols(): List<String> {
+        TODO("Not yet implemented")
+    }
+
+    override fun fetchCandles(
+        symbol: String,
+        interval: String,
+        limit: Int
+    ): List<Candle> {
+        TODO("Not yet implemented")
+    }
+
     override fun fetchCandles(
         symbol: String,
         limit: Int

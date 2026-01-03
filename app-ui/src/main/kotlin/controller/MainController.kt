@@ -1,91 +1,51 @@
 package com.daemonz.controller
 
-import com.daemonz.base.BaseController
-import com.daemonz.controller.dialog.AuthenticationDialogController
-import com.daemonz.utils.Mode
-import com.daemonz.utils.SystemConfig
-import com.daemonz.viewmodel.MainViewModel
-import javafx.collections.FXCollections
 import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
-import javafx.scene.Node
-import javafx.scene.control.ChoiceBox
-import javafx.scene.control.Dialog
-import javafx.scene.control.Label
+import javafx.scene.Parent
 import javafx.scene.control.ToggleButton
 import javafx.scene.control.ToggleGroup
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
-import javafx.util.StringConverter
-import org.koin.java.KoinJavaComponent.inject
-import java.util.Map
+import java.util.concurrent.ConcurrentHashMap
 
+class MainController {
 
-class MainController : BaseController() {
-
-    lateinit var lblErrors: Label
-    lateinit var lblRunner: Label
-    lateinit var lblLastCandle: Label
-    lateinit var lblFeed: Label
-    lateinit var statusBar: HBox
-    lateinit var contentHost: StackPane
     lateinit var navBar: VBox
-    private val viewModel: MainViewModel by inject(MainViewModel::class.java)
+    @FXML
+    lateinit var contentHost: StackPane
 
     @FXML
-    private lateinit var homeBtn: ToggleButton
+    lateinit var homeBtn: ToggleButton
+    @FXML
+    lateinit var analyzeBtn: ToggleButton
+    @FXML
+    lateinit var botseBtn: ToggleButton
+    @FXML
+    lateinit var logsBtn: ToggleButton
 
     @FXML
-    private lateinit var analyzeBtn: ToggleButton
+    lateinit var navGroup: ToggleGroup
 
-    @FXML
-    private lateinit var botseBtn: ToggleButton
-
-    @FXML
-    private lateinit var logsBtn: ToggleButton
-    private val navGroup = ToggleGroup()
-    private val viewMap = mutableMapOf<ToggleButton, String>()
-
+    private val viewCache = ConcurrentHashMap<String, Parent>()
 
     @FXML
     fun initialize() {
-        viewMap[homeBtn] = "/HomeView.fxml"
-        viewMap[analyzeBtn] = "/AnalyzeView.fxml"
-        viewMap[botseBtn] = "/BotsView.fxml"
-        viewMap[logsBtn] = "/LogsView.fxml"
-        homeBtn.setOnAction {
-            println("Home clicked")
-        }
-        // Nav toggle group
-        listOf(homeBtn, analyzeBtn, botseBtn, logsBtn).forEach {
-            it.toggleGroup = navGroup
-        }
+        // 1) Wire navigation
+        homeBtn.setOnAction { show("HomeView.fxml") }
+        analyzeBtn.setOnAction { show("AnalyzeView.fxml") }
+        botseBtn.setOnAction { show("BotsView.fxml") }
+        logsBtn.setOnAction { show("LogsView.fxml") }
 
-        navGroup.selectedToggleProperty().addListener { _, _, new ->
-            if (new != null) {
-                val btn = new as ToggleButton
-                viewMap[btn]?.let { loadView(it) }
-            }
-        }
-
+        // 2) Default view on startup
         homeBtn.isSelected = true
+        show("HomeView.fxml")
     }
 
-    @FXML
-    fun onHome() {
-        println("onHome")
-    }
-
-    private fun loadView(fxml: String) {
-        try {
-            val node: Node = FXMLLoader.load(javaClass.getResource(fxml))
-            contentHost.children.setAll(node)
-        } catch (e: Exception) {
-            contentHost.children.setAll(
-                Label("Failed to load view:\n$fxml\n${e.message}")
-            )
+    private fun show(fxml: String) {
+        val root = viewCache.computeIfAbsent(fxml) {
+            FXMLLoader(javaClass.getResource("/$fxml")).load()
         }
+        contentHost.children.setAll(root)
     }
 }

@@ -1,106 +1,155 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="Infinity" maxWidth="Infinity" prefHeight="362.0" prefWidth="874.0"
-      style="-fx-border-color: #000; -fx-border-width: 1.0;" xmlns="http://javafx.com/javafx/17.0.12"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.daemonz.controller.HomeController">
-    <children>
-        <GridPane>
-            <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="130.0" minWidth="10.0" prefWidth="130.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="170.0" minWidth="10.0" prefWidth="155.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="108.0" minWidth="10.0" prefWidth="60.0"/>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="184.0" minWidth="10.0" prefWidth="179.0"/>
-                <ColumnConstraints/>
-                <ColumnConstraints/>
-                <ColumnConstraints/>
-                <ColumnConstraints/>
-                <ColumnConstraints/>
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
-            </rowConstraints>
-            <children>
-                <Button fx:id="authBtn" mnemonicParsing="false" text="Authentication" GridPane.columnIndex="1"
-                        GridPane.rowIndex="5"/>
-                <Label text="Coming Soon" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                <Label text="Profile:" GridPane.rowIndex="1"/>
-                <Button fx:id="testBtn" mnemonicParsing="false" text="Refresh" GridPane.rowIndex="5"/>
-                <Label prefHeight="17.0" prefWidth="160.0" text="Binance Futures (USDT-M)" GridPane.columnIndex="6"
-                       GridPane.rowIndex="1"/>
-                <Label text="Exchange:" GridPane.columnIndex="5" GridPane.rowIndex="1"/>
-                <Label text="TOTAL WALLET" GridPane.rowIndex="7"/>
-                <Label fx:id="balanceLb" text="--" GridPane.rowIndex="8"/>
-                <Label fx:id="pnlLabel" text="--" GridPane.columnIndex="2" GridPane.rowIndex="8"/>
-                <Label text="Status:" GridPane.rowIndex="3"/>
-                <Label fx:id="lbStatus" text="❌ Disconnected" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                <Label text="Mode:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-                <ChoiceBox fx:id="modeChoice" prefWidth="150.0" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-                <Label text="CONNECTION" GridPane.rowIndex="2"/>
-                <Label text="Permission:" GridPane.rowIndex="4"/>
-                <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
-                    <children>
-                        <Label prefHeight="30.0" prefWidth="46.0" text="Trade:"/>
-                        <Label fx:id="lbTrade" prefHeight="46.0" prefWidth="28.0"/>
-                    </children>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.daemonz.controller.HomeController"
+            prefWidth="980.0" prefHeight="620.0">
+
+    <!-- PAGE PADDING -->
+    <padding>
+        <Insets top="14" right="14" bottom="14" left="14"/>
+    </padding>
+
+    <!-- HEADER -->
+    <top>
+        <VBox spacing="10">
+            <Label text="Home" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            <Separator/>
+        </VBox>
+    </top>
+
+    <!-- MAIN -->
+    <center>
+        <VBox spacing="14">
+
+            <!-- Connection / Profile Card -->
+            <VBox spacing="10" style="-fx-border-color: #2b2b2b; -fx-border-radius: 6; -fx-background-radius: 6;">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <GridPane hgap="12" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="90" hgrow="NEVER"/>
+                        <ColumnConstraints minWidth="220" hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="70" hgrow="NEVER"/>
+                        <ColumnConstraints minWidth="160" hgrow="NEVER"/>
+                        <ColumnConstraints minWidth="70" hgrow="NEVER"/>
+                        <ColumnConstraints minWidth="220" hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <!-- Row 0: Profile + Mode + Exchange -->
+                    <Label text="Profile:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <Label text="Coming Soon" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Mode:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                    <ChoiceBox fx:id="modeChoice" prefWidth="150.0" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                    <Label text="Exchange:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                    <Label text="Binance Futures (USDT-M)" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
+
+                    <!-- Row 1: Status + Buttons -->
+                    <Label text="Status:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <Label fx:id="lbStatus" text="❌ Disconnected" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                    <HBox spacing="10" GridPane.rowIndex="1" GridPane.columnIndex="3" GridPane.columnSpan="3">
+                        <Button fx:id="testBtn" text="Refresh" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="authBtn" text="Authentication" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <!-- Row 2: Permissions -->
+                    <Label text="Permissions:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+
+                    <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                        <Label text="Trade:"/>
+                        <Label fx:id="lbTrade" text="--"/>
+                    </HBox>
+
+                    <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="2" GridPane.columnSpan="2">
+                        <Label text="Withdraw:"/>
+                        <Label fx:id="lbWithdraw" text="--"/>
+                    </HBox>
+
+                    <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="4">
+                        <Label text="Deposit:"/>
+                        <Label fx:id="lbDeposit" text="--"/>
+                    </HBox>
+
+                    <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="5">
+                        <Label text="MultiAssetsMargin:"/>
+                        <Label fx:id="lbMargin" text="--"/>
+                    </HBox>
+                </GridPane>
+            </VBox>
+
+            <!-- Stats Card -->
+            <VBox spacing="10" style="-fx-border-color: #2b2b2b; -fx-border-radius: 6; -fx-background-radius: 6;">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <Label text="Account Snapshot" style="-fx-font-weight: bold;"/>
+
+                <GridPane hgap="18" vgap="6">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="180"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="180"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="180"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="180"/>
+                    </columnConstraints>
+
+                    <!-- Titles -->
+                    <Label text="TOTAL WALLET" style="-fx-opacity: 0.8;" GridPane.rowIndex="0"
+                           GridPane.columnIndex="0"/>
+                    <Label text="AVAILABLE" style="-fx-opacity: 0.8;" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="UNREALIZED PnL" style="-fx-opacity: 0.8;" GridPane.rowIndex="0"
+                           GridPane.columnIndex="2"/>
+                    <Label text="MARGIN MODE" style="-fx-opacity: 0.8;" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                    <!-- Values (keep fx:id) -->
+                    <Label fx:id="balanceLb" text="--" style="-fx-font-size: 16px; -fx-font-weight: bold;"
+                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <Label fx:id="tfAvailable" text="--" style="-fx-font-size: 16px; -fx-font-weight: bold;"
+                           GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label fx:id="pnlLabel" text="--" style="-fx-font-size: 16px; -fx-font-weight: bold;"
+                           GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                    <Label fx:id="lbMarginMode" text="--" style="-fx-font-size: 16px; -fx-font-weight: bold;"
+                           GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+                </GridPane>
+            </VBox>
+
+            <!-- Balances Card -->
+            <VBox spacing="10" VBox.vgrow="ALWAYS"
+                  style="-fx-border-color: #2b2b2b; -fx-border-radius: 6; -fx-background-radius: 6;">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <HBox spacing="10">
+                    <Label text="Balances" style="-fx-font-weight: bold;"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Label text="Search:"/>
+                    <!-- (giữ không đặt fx:id để khỏi đụng logic hiện tại; nếu muốn wire sau thì thêm fx:id) -->
+                    <TextField promptText="BTC / USDT / ..." prefWidth="220"/>
+                    <CheckBox text="Show zero balances"/>
                 </HBox>
-                <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="2" GridPane.rowIndex="4">
-                    <children>
-                        <Label prefHeight="30.0" prefWidth="60.0" text="Withdraw:"/>
-                        <Label fx:id="lbWithdraw" prefHeight="44.0" prefWidth="28.0"/>
-                    </children>
-                </HBox>
-                <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="3" GridPane.rowIndex="4">
-                    <children>
-                        <Label prefHeight="30.0" prefWidth="44.0" text="Deposit:"/>
-                        <Label fx:id="lbDeposit" prefHeight="45.0" prefWidth="28.0"/>
-                    </children>
-                </HBox>
-                <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="4" GridPane.rowIndex="4">
-                    <children>
-                        <Label prefHeight="30.0" prefWidth="110.0" text="MultiAssetsMargin:"/>
-                        <Label fx:id="lbMargin" prefHeight="30.0" prefWidth="37.0"/>
-                    </children>
-                </HBox>
-                <Label text="AVAILABLE" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
-                <Label text="UNREALIZED PnL" GridPane.columnIndex="2" GridPane.rowIndex="7"/>
-                <Label text="MARGIN MODE" GridPane.columnIndex="3" GridPane.rowIndex="7"/>
-                <Label fx:id="tfAvailable" text="--" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
-                <Label fx:id="lbMarginMode" text="--" GridPane.columnIndex="3" GridPane.rowIndex="8"/>
-                <Label text="BALANCES" GridPane.rowIndex="9"/>
-                <Label text="Search:" GridPane.rowIndex="10"/>
-                <TextField GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="10"/>
-                <CheckBox mnemonicParsing="false" text="Show zero balances" GridPane.columnIndex="3"
-                          GridPane.rowIndex="10"/>
-                <TableView prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="5" GridPane.rowIndex="11"
-                           GridPane.rowSpan="5">
+
+                <!-- (giữ TableView không có fx:id để khỏi đụng logic; bạn wire sau vẫn được) -->
+                <TableView VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn prefWidth="75.0" text="C1"/>
-                        <TableColumn prefWidth="75.0" text="C2"/>
+                        <TableColumn text="Asset" prefWidth="120"/>
+                        <TableColumn text="Wallet" prefWidth="180"/>
+                        <TableColumn text="Available" prefWidth="180"/>
+                        <TableColumn text="Cross Wallet" prefWidth="180"/>
                     </columns>
                 </TableView>
-            </children>
-        </GridPane>
-    </children>
-</VBox>
+            </VBox>
+
+        </VBox>
+    </center>
+
+</BorderPane>
