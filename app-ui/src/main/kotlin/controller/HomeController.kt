@@ -6,18 +6,29 @@ import com.daemonz.base.BaseController
 import com.daemonz.controller.dialog.AuthenticationDialogController
 import com.daemonz.models.AccountSnapshot
 import com.daemonz.runtime.AccountService
+import com.daemonz.utils.Mode
 import com.daemonz.utils.SystemConfig
+import javafx.collections.FXCollections
 import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
 import javafx.scene.control.Button
+import javafx.scene.control.ChoiceBox
 import javafx.scene.control.Dialog
 import javafx.scene.control.Label
 import javafx.scene.layout.GridPane
+import javafx.util.StringConverter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class HomeController : BaseController() {
+    lateinit var lbMarginMode: Label
+    lateinit var tfAvailable: Label
+    lateinit var lbMargin: Label
+    lateinit var lbDeposit: Label
+    lateinit var lbWithdraw: Label
+    lateinit var lbTrade: Label
+    lateinit var modeChoice: ChoiceBox<Mode>
     lateinit var lbStatus: Label
     lateinit var pnlLabel: Label
     lateinit var balanceLb: Label
@@ -32,6 +43,19 @@ class HomeController : BaseController() {
         }
         testBtn.setOnAction {
             refreshData()
+        }
+        modeChoice.items = FXCollections.observableArrayList(Mode.entries)
+        modeChoice.converter = object : StringConverter<Mode>() {
+            override fun toString(p0: Mode?): String? = p0?.label
+
+            override fun fromString(p0: String?): Mode? =
+                Mode.entries.find { it.label == p0 }
+
+        }
+        modeChoice.selectionModel.select(SystemConfig.mode)
+        modeChoice.valueProperty().addListener { _, _, newValue ->
+            println("Mode selected: $newValue")
+            SystemConfig.mode = newValue
         }
     }
 

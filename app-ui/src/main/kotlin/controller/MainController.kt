@@ -25,7 +25,6 @@ import java.util.Map
 
 class MainController : BaseController() {
 
-    lateinit var modeChoice: ChoiceBox<Mode>
     lateinit var lblErrors: Label
     lateinit var lblRunner: Label
     lateinit var lblLastCandle: Label
@@ -72,19 +71,6 @@ class MainController : BaseController() {
         }
 
         homeBtn.isSelected = true
-        modeChoice.items = FXCollections.observableArrayList(Mode.entries)
-        modeChoice.converter = object : StringConverter<Mode>() {
-            override fun toString(p0: Mode?): String? = p0?.label
-
-            override fun fromString(p0: String?): Mode? =
-                Mode.entries.find { it.label == p0 }
-
-        }
-        modeChoice.selectionModel.select(SystemConfig.mode)
-        modeChoice.valueProperty().addListener { _, _, newValue ->
-            println("Mode selected: $newValue")
-            SystemConfig.mode = newValue
-        }
     }
 
     @FXML
