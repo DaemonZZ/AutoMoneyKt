@@ -1,4 +1,4 @@
-package com.daemonz.runtime.scaner
+package com.daemonz.runtime.scanner
 
 import kotlin.math.max
 import kotlin.math.min

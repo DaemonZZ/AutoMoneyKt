@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefWidth="900.0" prefHeight="600.0"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.daemonz.controller.TradeDetailController">
+
+    <!-- ===== Top: Summary ===== -->
+    <top>
+        <VBox spacing="6">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label fx:id="titleLabel"
+                   text="Trade Detail"
+                   style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <GridPane hgap="16" vgap="6">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="120"/>
+                    <ColumnConstraints minWidth="180"/>
+                    <ColumnConstraints minWidth="120"/>
+                    <ColumnConstraints minWidth="180"/>
+                </columnConstraints>
+
+                <Label text="Symbol:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label fx:id="symbolLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Strategy:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                <Label fx:id="strategyLabel" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                <Label text="Verdict:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <Label fx:id="verdictLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Score:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                <Label fx:id="scoreLabel" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                <Label text="Trades:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <Label fx:id="tradesLabel" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                <Label text="Win Rate:" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                <Label fx:id="winRateLabel" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
+
+                <Label text="Profit Factor:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <Label fx:id="pfLabel" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                <Label text="Max DD:" GridPane.rowIndex="3" GridPane.columnIndex="2"/>
+                <Label fx:id="maxDdLabel" GridPane.rowIndex="3" GridPane.columnIndex="3"/>
+            </GridPane>
+        </VBox>
+    </top>
+
+    <!-- ===== Center: Equity Curve ===== -->
+    <center>
+        <VBox spacing="6">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Equity Curve"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+            <LineChart fx:id="equityChart" animated="false" createSymbols="false">
+                <xAxis>
+                    <NumberAxis fx:id="equityXAxis" label="Time"/>
+                </xAxis>
+                <yAxis>
+                    <NumberAxis fx:id="equityYAxis" label="Equity"/>
+                </yAxis>
+            </LineChart>
+        </VBox>
+    </center>
+
+    <!-- ===== Bottom: Trade List ===== -->
+    <bottom>
+        <VBox spacing="6">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Trades"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+            <TableView fx:id="tradesTable" prefHeight="220">
+                <columns>
+                    <TableColumn fx:id="colEntryTime" text="Entry Time" prefWidth="120"/>
+                    <TableColumn fx:id="colSide" text="Side" prefWidth="70"/>
+                    <TableColumn fx:id="colEntryPrice" text="Entry" prefWidth="90"/>
+                    <TableColumn fx:id="colExitPrice" text="Exit" prefWidth="90"/>
+                    <TableColumn fx:id="colPnl" text="PnL" prefWidth="90"/>
+                    <TableColumn fx:id="colDuration" text="Bars" prefWidth="70"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </bottom>
+
+</BorderPane>

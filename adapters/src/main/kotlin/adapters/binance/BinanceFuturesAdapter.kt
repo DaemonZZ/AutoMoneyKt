@@ -1,23 +1,17 @@
 package com.daemonz.adapters.binance
 
-import com.daemonz.adapters.exchange.ConnectionStatus
-import com.daemonz.adapters.exchange.ExchangeAdapter
-import com.daemonz.adapters.exchange.FuturesAccountInfo
-import com.daemonz.adapters.exchange.FuturesBalance
-import com.daemonz.adapters.exchange.FuturesBalanceJson
-import com.daemonz.adapters.exchange.OrderAck
-import com.daemonz.adapters.exchange.OrderSide
-import com.daemonz.adapters.exchange.OrderType
-import com.daemonz.adapters.exchange.PlaceOrderRequest
-import com.daemonz.adapters.exchange.PositionSnapshot
-import com.daemonz.adapters.exchange.SymbolInfo
+import com.daemonz.adapters.exchange.*
 import com.daemonz.core.market.Candle
+import com.daemonz.core.market.Ticker24h
+import com.daemonz.core.market.Timeframe
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 class BinanceFuturesAdapter(
@@ -35,18 +29,100 @@ class BinanceFuturesAdapter(
         return FuturesAccountJson.parse(json)
     }
 
+    private val http = OkHttpClient.Builder()
+        .callTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    override fun fetchTickers24h(): List<Ticker24h> {
+        val url = "${cfg.baseUrl}/fapi/v1/ticker/24hr"
+        val req = Request.Builder().url(url).get().build()
+
+        http.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) {
+                val body = resp.body?.string().orEmpty()
+                throw IllegalStateException("ticker24h failed: ${resp.code} $body")
+            }
+
+            val arr = JSONArray(resp.body?.string() ?: "[]")
+            val out = ArrayList<Ticker24h>(arr.length())
+
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val symbol = o.optString("symbol")
+                val quoteVol = o.optString("quoteVolume", "0").toDoubleOrNull() ?: 0.0
+                val chgPct = o.optString("priceChangePercent", "0").toDoubleOrNull() ?: 0.0
+
+                // USDT-M futures tickers vẫn trả đủ, bạn lọc symbol ở runtime
+                out.add(Ticker24h(symbol, quoteVol, chgPct))
+            }
+            return out
+        }
+    }
+
     override fun listTradableSymbols(): List<String> {
-        TODO("Not yet implemented")
+        val url = "${cfg.baseUrl}/fapi/v1/exchangeInfo"
+        val req = Request.Builder().url(url).get().build()
+
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) {
+                error("exchangeInfo failed: ${resp.code}")
+            }
+
+            val json = org.json.JSONObject(resp.body!!.string())
+            val symbols = json.getJSONArray("symbols")
+
+            val result = mutableListOf<String>()
+            for (i in 0 until symbols.length()) {
+                val s = symbols.getJSONObject(i)
+                if (
+                    s.getString("status") == "TRADING" &&
+                    s.getString("quoteAsset") == "USDT"
+                ) {
+                    result += s.getString("symbol")
+                }
+            }
+            return result
+        }
     }
 
     override fun fetchCandles(
         symbol: String,
-        interval: String,
+        interval: Timeframe,
         limit: Int
     ): List<Candle> {
-        TODO("Not yet implemented")
-    }
 
+        val url =
+            "${cfg.baseUrl}/fapi/v1/klines" +
+                    "?symbol=$symbol" +
+                    "&interval=$interval" +
+                    "&limit=$limit"
+
+        val req = Request.Builder().url(url).get().build()
+
+        client.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) {
+                error("klines failed for $symbol: ${resp.code}")
+            }
+
+            val arr = JSONArray(resp.body!!.string())
+            val candles = ArrayList<Candle>(arr.length())
+
+            for (i in 0 until arr.length()) {
+                val k = arr.getJSONArray(i)
+
+                candles += Candle(
+                    t = k.getLong(0),                // open time
+                    open = k.getString(1).toDouble(),
+                    high = k.getString(2).toDouble(),
+                    low = k.getString(3).toDouble(),
+                    close = k.getString(4).toDouble(),
+                    volume = k.getString(5).toDouble()
+                )
+            }
+
+            return candles
+        }
+    }
     override fun fetchCandles(
         symbol: String,
         limit: Int

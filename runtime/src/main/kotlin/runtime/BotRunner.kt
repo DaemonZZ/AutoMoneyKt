@@ -34,7 +34,7 @@ class BotRunner(
 
         job = scope.launch(Dispatchers.Default) {
             eventSink.emit(RuntimeEvent.Status(symbol, true))
-            eventSink.emit(RuntimeEvent.Log("[Runtime] start PAPER bot: ${strategy.name} on $symbol"))
+            eventSink.emit(RuntimeEvent.Log("[Runtime] start PAPER bot: ${strategy.name()} on $symbol"))
 
             try {
                 val engine = BacktestEngine(risk)

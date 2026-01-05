@@ -1,4 +1,4 @@
-package com.daemonz.runtime.scaner
+package com.daemonz.runtime.scanner
 
 import com.daemonz.core.trade.Trade
 import kotlin.math.abs

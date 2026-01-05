@@ -1,6 +1,8 @@
 package com.daemonz.adapters.exchange
 
 import com.daemonz.core.market.Candle
+import com.daemonz.core.market.Ticker24h
+import com.daemonz.core.market.Timeframe
 
 
 interface ExchangeAdapter {
@@ -25,6 +27,6 @@ interface ExchangeAdapter {
 
     fun fetchFuturesAccountInfo(): FuturesAccountInfo
     fun listTradableSymbols(): List<String>   // Futures USDT-M, trạng thái TRADING
-    fun fetchCandles(symbol: String, interval: String, limit: Int): List<Candle>
-
+    fun fetchCandles(symbol: String, interval: Timeframe, limit: Int): List<Candle>
+    fun fetchTickers24h(): List<Ticker24h>
 }

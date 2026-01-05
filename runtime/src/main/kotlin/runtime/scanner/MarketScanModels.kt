@@ -1,11 +1,13 @@
-package com.daemonz.runtime.scaner
+package com.daemonz.runtime.scanner
+
+import com.daemonz.core.market.Timeframe
 
 enum class Verdict { TRADE, WATCH, AVOID }
 
 data class ScanRequest(
     val symbols: List<String>? = null,     // null => auto pick
     val autoPickCount: Int = 5,
-    val interval: String = "15m",
+    val interval: Timeframe = Timeframe.M15,
     val candleLimit: Int = 1500
 )
 

@@ -11,6 +11,8 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation(project(":core"))
+    implementation("org.json:json:20240303")
 }
 
 kotlin {
