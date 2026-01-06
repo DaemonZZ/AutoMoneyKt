@@ -140,7 +140,7 @@
                             <padding>
                                 <Insets top="10" right="10" bottom="10" left="10"/>
                             </padding>
-
+                            <CheckBox fx:id="applyFiltersCheck" text="Apply filters" selected="true"/>
                             <HBox spacing="8">
                                 <Label text="Min Trades" minWidth="90"/>
                                 <Slider fx:id="minTradesSlider" min="0" max="100" value="10" HBox.hgrow="ALWAYS"/>

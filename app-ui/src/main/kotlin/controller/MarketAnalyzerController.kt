@@ -42,6 +42,8 @@ private data class AnalyzeCacheKey(
 
 class MarketAnalyzerController {
 
+    lateinit var applyFiltersCheck: CheckBox
+
     // ✅ FIX: colVolPct phải là String (vì hiển thị "1.23")
     @FXML
     lateinit var colVolPct: TableColumn<ScanResult, String>
@@ -322,17 +324,29 @@ class MarketAnalyzerController {
         }
         minVolatilityField.textProperty().addListener { _, _, _ -> applyResultFilters() }
         hideLowSampleCheck.selectedProperty().addListener { _, _, _ -> applyResultFilters() }
+        applyFiltersCheck.selectedProperty().addListener { _, _, enabled ->
+            // disable/enable các control còn lại
+            minTradesSlider.isDisable = !enabled
+            minScoreSlider.isDisable = !enabled
+            minVolatilityField.isDisable = !enabled
+            hideLowSampleCheck.isDisable = !enabled
 
+            applyResultFilters()
+        }
         applyResultFilters()
     }
 
     private fun applyResultFilters() {
+        val enabled = applyFiltersCheck.isSelected
+
         val minTrades = minTradesSlider.value.toInt()
         val minScore = minScoreSlider.value.toInt()
         val hideLowSample = hideLowSampleCheck.isSelected
         val minVol = minVolatilityField.text.toDoubleOrNull() ?: 0.0
 
         filteredResults.setPredicate { r ->
+            if (!enabled) return@setPredicate true
+
             if (r.metrics.trades < minTrades) return@setPredicate false
             if (r.score < minScore) return@setPredicate false
             if (hideLowSample && r.metrics.trades < 10) return@setPredicate false
@@ -343,8 +357,9 @@ class MarketAnalyzerController {
             true
         }
 
-        resultsCountLabel.text = "${filteredResults.size} results"
+        resultsCountLabel.text = "Shown ${filteredResults.size} / Raw ${resultsSource.size}"
     }
+
 
     // ✅ FIX: keyForSymbol phải dùng prefix snapshot (activePrefix) để ổn định
     private fun snapshotPrefixFromUI(): AnalyzeKeyPrefix {
@@ -454,11 +469,10 @@ class MarketAnalyzerController {
             try {
                 val results = withContext(Dispatchers.IO) {
 
-                    // ✅ AUTO PICK: gọi hàm mới nếu bạn đã implement
                     if (isAuto) {
                         val autoCfg = AutoPickConfig(
                             count = 5,
-                            poolSize = 60,
+                            poolSize = 150,
                             maxPoolSize = 300,
                             stepSize = 60,
                             logic = when {
@@ -466,8 +480,8 @@ class MarketAnalyzerController {
                                 autoPickGainersRadio.isSelected -> AutoPickLogic.TOP_GAINERS_24H
                                 else -> AutoPickLogic.RANDOM_DIVERSITY
                             },
-                            excludeStablecoins = false,          // nếu bạn có checkbox thì thay
-                            excludeLeveragedTokens = false       // nếu bạn có checkbox thì thay
+                            excludeStablecoins = false,
+                            excludeLeveragedTokens = false
                         )
 
                         scanner.autoPickAnalyzeTopTrades(
@@ -489,7 +503,6 @@ class MarketAnalyzerController {
                             }
                         )
                     } else {
-                        // ✅ MANUAL: giữ như cũ
                         scanner.analyze(
                             req = request,
                             strategy = strategy,
