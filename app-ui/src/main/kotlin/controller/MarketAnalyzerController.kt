@@ -2,6 +2,7 @@ package com.daemonz.controller
 
 import com.daemonz.adapters.binance.BinanceConfig
 import com.daemonz.adapters.binance.BinanceFuturesAdapter
+import com.daemonz.core.analysis.StrategyCompatibility
 import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
 import com.daemonz.core.risk.RiskConfig
@@ -12,6 +13,8 @@ import com.daemonz.runtime.scanner.MarketScannerService
 import com.daemonz.runtime.scanner.ScanRequest
 import com.daemonz.runtime.scanner.ScanResult
 import com.daemonz.runtime.status.AppStatus
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Params
 import com.daemonz.strategies.registry.StrategyRegistry
 import com.daemonz.utils.Mode
 import com.daemonz.utils.SystemConfig
@@ -503,18 +506,17 @@ class MarketAnalyzerController {
                             }
                         )
                     } else {
-                        scanner.analyze(
+                        val compat: StrategyCompatibility<EmaPullbackV7Params> = EmaPullbackV7Compatibility()
+                        val p = params as EmaPullbackV7Params
+                        scanner.analyzeStepB(
                             req = request,
-                            strategy = strategy,
-                            params = params,
+                            params = p,
+                            compat = compat,
                             onProgress = { done, total, sym ->
                                 withContext(Dispatchers.JavaFx) {
                                     progressBar.progress = if (total > 0) done.toDouble() / total else 0.0
                                     progressTextLabel.text = "$done/$total"
                                 }
-                            },
-                            onDetail = { symbol, bt ->
-                                backtestCache[keyForSymbol(symbol)] = bt
                             },
                             onVolatility = { symbol, volPct ->
                                 volatilityCache[keyForSymbol(symbol)] = volPct

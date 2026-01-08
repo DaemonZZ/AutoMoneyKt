@@ -29,4 +29,10 @@ interface ExchangeAdapter {
     fun listTradableSymbols(): List<String>   // Futures USDT-M, trạng thái TRADING
     fun fetchCandles(symbol: String, interval: Timeframe, limit: Int): List<Candle>
     fun fetchTickers24h(): List<Ticker24h>
+
+    /**
+     * Return candles in ascending time order (oldest -> newest).
+     * windowBars: number of bars needed.
+     */
+    suspend fun getKlines(symbol: String, timeframe: Timeframe, windowBars: Int): List<Candle>
 }

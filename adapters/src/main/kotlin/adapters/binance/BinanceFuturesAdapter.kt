@@ -4,6 +4,8 @@ import com.daemonz.adapters.exchange.*
 import com.daemonz.core.market.Candle
 import com.daemonz.core.market.Ticker24h
 import com.daemonz.core.market.Timeframe
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -56,6 +58,12 @@ class BinanceFuturesAdapter(
                 out.add(Ticker24h(symbol, quoteVol, chgPct))
             }
             return out
+        }
+    }
+    override suspend fun getKlines(symbol: String, timeframe: Timeframe, windowBars: Int): List<Candle> {
+        // call blocking fetch on IO thread (safe even if caller forgets)
+        return withContext(Dispatchers.IO) {
+            fetchCandles(symbol, timeframe, windowBars)
         }
     }
 

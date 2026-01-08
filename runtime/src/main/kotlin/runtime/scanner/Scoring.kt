@@ -54,7 +54,7 @@ object Scoring {
         val verdict = when {
             score >= 70 && m.trades >= 10 -> Verdict.TRADE
             score >= 50 -> Verdict.WATCH
-            else -> Verdict.AVOID
+            else -> Verdict.SKIP
         }
 
         return score to (verdict to reasons.take(4))

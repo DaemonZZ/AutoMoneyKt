@@ -1,6 +1,9 @@
 package com.daemonz.runtime.scanner
 
 import com.daemonz.adapters.exchange.ExchangeAdapter
+import com.daemonz.core.analysis.EligibilityEngine
+import com.daemonz.core.analysis.EligibilityThresholds
+import com.daemonz.core.analysis.SimpleMarketStatsComputer
 import com.daemonz.core.engine.BacktestEngine
 import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
@@ -14,11 +17,18 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 import kotlinx.coroutines.sync.withPermit
+import com.daemonz.core.analysis.LruStatsCache
+import com.daemonz.core.analysis.StatsCache
+import com.daemonz.core.analysis.StatsCollector
+import com.daemonz.core.analysis.StatsKey
+import com.daemonz.core.analysis.StrategyCompatibility
 
 class MarketScannerService(
     private val exchange: ExchangeAdapter,
     private val risk: RiskConfig = RiskConfig()
 ) {
+    private val statsCache: StatsCache = LruStatsCache(maxSize = 3000)
+    private val stepACollector = StatsCollector(maxItems = 5000)
     suspend fun <P> analyze(
         req: ScanRequest,
         strategy: Strategy<P>,
@@ -172,6 +182,239 @@ class MarketScannerService(
             .take(auto.count)
 
         picked
+    }
+
+    suspend fun analyzeStepA(
+        req: ScanRequest,
+        config: StepAConfig = StepAConfig(),
+        onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit = { _, _, _ -> },
+        onVolatility: suspend (symbol: String, volPct: Double) -> Unit = { _, _ -> }
+    ): List<ScanResult> = coroutineScope {
+
+        val symbols = req.symbols ?: autoPick(req.autoPickCount)
+        val total = symbols.size
+        var done = 0
+
+        val sem = Semaphore(config.maxConcurrency)
+
+        val statsComputer = SimpleMarketStatsComputer()
+        val eligibilityEngine = EligibilityEngine(thresholdsFor(req.interval))
+
+        symbols.map { symbol ->
+            async(Dispatchers.IO) {
+                sem.withPermit {
+                    // (1) progress start
+                    onProgress(done, total, symbol)
+
+                    val scan: ScanResult = try {
+                        val candles = exchange.fetchCandles(
+                            symbol = symbol,
+                            interval = req.interval,
+                            limit = req.candleLimit
+                        ).sortedBy { it.t }
+                        val lastT = candles.lastOrNull()?.t ?: 0L
+                        val key = StatsKey(symbol, req.interval.name, req.candleLimit, lastT)
+
+                        val stats = try {
+                            statsCache.get(key) ?: statsComputer.compute(candles).also { statsCache.put(key, it) }
+                        } catch (t: Throwable) {
+                            return@withPermit ScanResult(
+                                symbol = symbol,
+                                metrics = ScanMetrics.EMPTY,
+                                score = 0,
+                                verdict = if (config.applyFilters) Verdict.SKIP else Verdict.TRADE,
+                                reasons = listOf("Not enough candles", (t.message ?: "compute failed").take(60))
+                            )
+                        }
+                        stepACollector.add(stats)
+
+                        var elig = eligibilityEngine.evaluate(stats)
+                        // volatility callback (giữ UI)
+                        val volPct = calcVolatilityPct(candles, lookback = 50)
+                        onVolatility(symbol, volPct)
+
+                        // applyFilters=false: không reject, chỉ label
+                        if (!config.applyFilters) {
+                            elig = elig.copy(eligible = true)
+                        }
+
+                        val verdict = if (elig.eligible) Verdict.TRADE else Verdict.SKIP
+                        val score = (elig.confidence * 100.0).toInt().coerceIn(0, 100)
+
+                        val reasons = buildList {
+                            if (elig.reasons.isNotEmpty()) addAll(elig.reasons.take(2)) else add("Eligible")
+                            add("Regime=${elig.regime}")
+                            add(
+                                "ATR%=${"%.2f".format(elig.stats.atrPct)} " +
+                                        "Chop=${"%.2f".format(elig.stats.chopScore)} " +
+                                        "Trend=${"%.2f".format(elig.stats.trendStrength)}"
+                            )
+                            // nếu muốn thêm vol vào reasons (tùy bạn)
+                            // add("Vol%=${"%.2f".format(volPct)}")
+                        }.take(4)
+
+                        ScanResult(
+                            symbol = symbol,
+                            metrics = ScanMetrics.EMPTY,
+                            score = score,
+                            verdict = verdict,
+                            reasons = reasons
+                        )
+                    } catch (t: Throwable) {
+                        // Error handling: không crash whole scan
+                        ScanResult(
+                            symbol = symbol,
+                            metrics = ScanMetrics.EMPTY,
+                            score = 0,
+                            verdict = if (config.applyFilters) Verdict.SKIP else Verdict.TRADE,
+                            reasons = listOf(
+                                "Error fetching/analyzing",
+                                (t.message ?: t::class.java.simpleName).take(80)
+                            )
+                        )
+                    }
+
+                    // (3) progress end
+                    synchronized(this@MarketScannerService) { done += 1 }
+                    onProgress(done, total, symbol)
+
+                    val sum = stepACollector.summary()
+                    if (sum != null) {
+                        println(
+                            "[StepA:Tuning] n=${sum.n} " +
+                                    "ATR p10/p50/p90=${"%.2f".format(sum.atrP10)}/${"%.2f".format(sum.atrP50)}/${
+                                        "%.2f".format(
+                                            sum.atrP90
+                                        )
+                                    } " +
+                                    "Chop p10/p50/p90=${"%.2f".format(sum.chopP10)}/${"%.2f".format(sum.chopP50)}/${
+                                        "%.2f".format(
+                                            sum.chopP90
+                                        )
+                                    } " +
+                                    "Trend p10/p50/p90=${"%.2f".format(sum.trendP10)}/${"%.2f".format(sum.trendP50)}/${
+                                        "%.2f".format(
+                                            sum.trendP90
+                                        )
+                                    }"
+                        )
+                    }
+                    scan
+                }
+            }
+        }.awaitAll()
+    }
+
+    suspend fun <P> analyzeStepB(
+        req: ScanRequest,
+        params: P,
+        compat: StrategyCompatibility<P>,
+        config: StepBConfig = StepBConfig(),
+        onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit = { _, _, _ -> },
+        onVolatility: suspend (symbol: String, volPct: Double) -> Unit = { _, _ -> }
+    ): List<ScanResult> = coroutineScope {
+
+        val symbols = req.symbols ?: autoPick(req.autoPickCount)
+        val total = symbols.size
+        var done = 0
+
+        val sem = Semaphore(config.maxConcurrency)
+
+        // Step A engines (bạn đã có)
+        val statsComputer = SimpleMarketStatsComputer()
+        val eligibilityEngine = EligibilityEngine(thresholdsFor(req.interval)) // dùng preset Step A bạn đã có
+
+        symbols.map { symbol ->
+            async(Dispatchers.IO) {
+                sem.withPermit {
+                    onProgress(done, total, symbol)
+
+                    val result: ScanResult = try {
+                        val candles = exchange.fetchCandles(symbol, req.interval, req.candleLimit)
+                            .sortedBy { it.t }
+
+                        val volPct = calcVolatilityPct(candles, lookback = 50)
+                        onVolatility(symbol, volPct)
+
+                        // ---- Step A: Stats (cache nếu bạn đã làm) ----
+                        val lastT = candles.lastOrNull()?.t ?: 0L
+                        val key = StatsKey(symbol, req.interval.name, req.candleLimit, lastT)
+                        val stats =
+                            statsCache.get(key) ?: statsComputer.compute(candles).also { statsCache.put(key, it) }
+
+                        var elig = eligibilityEngine.evaluate(stats)
+                        if (!config.applyFilters) elig = elig.copy(eligible = true)
+
+                        // Nếu applyFilters=true và fail eligibility -> SKIP luôn (không cần Step B)
+                        if (config.applyFilters && !elig.eligible) {
+                            val reasons = buildList {
+                                addAll(elig.reasons.take(2).ifEmpty { listOf("Not eligible") })
+                                add("Regime=${elig.regime}")
+                                add(
+                                    "ATR%=${"%.2f".format(elig.stats.atrPct)} Chop=${"%.2f".format(elig.stats.chopScore)} Trend=${
+                                        "%.2f".format(
+                                            elig.stats.trendStrength
+                                        )
+                                    }"
+                                )
+                            }.take(4)
+
+                            ScanResult(
+                                symbol = symbol,
+                                metrics = ScanMetrics.EMPTY,
+                                score = (elig.confidence * 100).toInt().coerceIn(0, 100),
+                                verdict = Verdict.SKIP,
+                                reasons = reasons
+                            )
+                        } else {
+                            // ---- Step B: Compatibility ----
+                            val cs = compat.compatibility(stats, params)
+
+                            // combine score: market confidence + compat
+                            val marketScore = (elig.confidence * 100.0).coerceIn(0.0, 100.0)
+                            val finalScore = (
+                                    config.weightMarket * marketScore +
+                                            config.weightCompat * cs.score.toDouble()
+                                    ).toInt().coerceIn(0, 100)
+
+                            val verdict = when {
+                                cs.score >= 70 -> Verdict.TRADE
+                                cs.score >= 50 -> Verdict.WATCH
+                                else -> Verdict.SKIP
+                            }
+
+                            val reasons = buildList {
+                                add("Compat=${cs.score} Final=$finalScore")
+                                add("Regime=${elig.regime}")
+                                // 1-2 dòng lý do từ strategy
+                                addAll(cs.reasons.take(2))
+                            }.take(4)
+
+                            ScanResult(
+                                symbol = symbol,
+                                metrics = ScanMetrics.EMPTY,
+                                score = finalScore,
+                                verdict = verdict,
+                                reasons = reasons
+                            )
+                        }
+                    } catch (t: Throwable) {
+                        ScanResult(
+                            symbol = symbol,
+                            metrics = ScanMetrics.EMPTY,
+                            score = 0,
+                            verdict = if (config.applyFilters) Verdict.SKIP else Verdict.TRADE,
+                            reasons = listOf("Error", (t.message ?: t::class.java.simpleName).take(80))
+                        )
+                    }
+
+                    synchronized(this@MarketScannerService) { done += 1 }
+                    onProgress(done, total, symbol)
+
+                    result
+                }
+            }
+        }.awaitAll()
     }
 
     /**
@@ -332,7 +575,7 @@ class MarketScannerService(
         val verdict = when {
             score >= 70 && m.trades >= 10 -> Verdict.TRADE
             score >= 50 -> Verdict.WATCH
-            else -> Verdict.AVOID
+            else -> Verdict.SKIP
         }
 
         return Triple(score, verdict, reasons.take(4))
@@ -363,6 +606,23 @@ class MarketScannerService(
             }
         }
         return if (count > 0) sum / count else 0.0
+    }
+    private fun thresholdsFor(tf: Timeframe): EligibilityThresholds = when (tf) {
+        Timeframe.M1, Timeframe.M5, Timeframe.M15 -> EligibilityThresholds(
+            minAtrPct = 0.25,
+            maxAtrPct = 4.50,
+            minTrendStrength = 0.22,
+            maxChopScore = 0.72
+        )
+
+        Timeframe.M30, Timeframe.H1 -> EligibilityThresholds(
+            minAtrPct = 0.18,
+            maxAtrPct = 3.80,
+            minTrendStrength = 0.20,
+            maxChopScore = 0.70
+        )
+
+        else -> EligibilityThresholds() // H4/D1 default
     }
 
 }
