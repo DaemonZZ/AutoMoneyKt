@@ -6,17 +6,19 @@ import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
 import com.daemonz.core.risk.RiskConfig
 import com.daemonz.core.strategy.StrategySpec
-import com.daemonz.runtime.scanner.AutoPickConfig
-import com.daemonz.runtime.scanner.AutoPickLogic
-import com.daemonz.runtime.scanner.MarketScannerService
-import com.daemonz.runtime.scanner.ScanRequest
-import com.daemonz.runtime.scanner.ScanResult
+import com.daemonz.runtime.scanner.*
 import com.daemonz.runtime.status.AppStatus
+import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Compatibility
+import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1CompatibilityParams
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7CompatibilityParams
 import com.daemonz.strategies.registry.StrategyRegistry
 import com.daemonz.strategies.registry.StrategySelection
 import com.daemonz.strategies.registry.newSelectionAny
 import com.daemonz.utils.Mode
 import com.daemonz.utils.SystemConfig
+import javafx.beans.property.BooleanProperty
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
@@ -33,12 +35,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToInt
-import com.daemonz.runtime.scanner.StepBConfig
-import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Compatibility
-import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1CompatibilityParams
-import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
-import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7CompatibilityParams
-
 
 private data class AnalyzeCacheKey(
     val symbol: String,
@@ -50,92 +46,62 @@ private data class AnalyzeCacheKey(
 
 class MarketAnalyzerController {
 
-    lateinit var applyFiltersCheck: CheckBox
+    /* =========================
+       UI – Right filters
+       ========================= */
+    @FXML lateinit var applyFiltersCheck: CheckBox
 
-    @FXML
-    lateinit var colVolPct: TableColumn<ScanResult, String>
-
-    @FXML
-    lateinit var autoPickBtn: Button
+    @FXML lateinit var colVolPct: TableColumn<ScanResult, String>
+    @FXML lateinit var autoPickBtn: Button
 
     /* =========================
            UI – Top bar
        ========================= */
-    @FXML
-    lateinit var strategyCombo: ComboBox<StrategySpec<*>>
-    @FXML
-    lateinit var intervalCombo: ComboBox<Timeframe>
-    @FXML
-    lateinit var historyCombo: ComboBox<Int>
-    @FXML
-    lateinit var modeCombo: ComboBox<String>
-    @FXML
-    lateinit var riskField: TextField
-    @FXML
-    lateinit var equityField: TextField
+    @FXML lateinit var strategyCombo: ComboBox<StrategySpec<*>>
+    @FXML lateinit var intervalCombo: ComboBox<Timeframe>
+    @FXML lateinit var historyCombo: ComboBox<Int>
+    @FXML lateinit var modeCombo: ComboBox<String>
+    @FXML lateinit var riskField: TextField
+    @FXML lateinit var equityField: TextField
 
     /* =========================
        UI – Left panel
        ========================= */
-    @FXML
-    lateinit var symbolSearchField: TextField
-    @FXML
-    lateinit var symbolListView: ListView<String>
-    @FXML
-    lateinit var selectedCountLabel: Label
-    @FXML
-    lateinit var clearSelectionBtn: Button
+    @FXML lateinit var symbolSearchField: TextField
+    @FXML lateinit var symbolListView: ListView<String>
+    @FXML lateinit var selectedCountLabel: Label
+    @FXML lateinit var clearSelectionBtn: Button
 
     /* =========================
        UI – Center table
        ========================= */
-    @FXML
-    lateinit var resultsTable: TableView<ScanResult>
-    @FXML
-    lateinit var resultsCountLabel: Label
+    @FXML lateinit var resultsTable: TableView<ScanResult>
+    @FXML lateinit var resultsCountLabel: Label
 
-    @FXML
-    lateinit var colSymbol: TableColumn<ScanResult, String>
-    @FXML
-    lateinit var colVerdict: TableColumn<ScanResult, String>
-    @FXML
-    lateinit var colScore: TableColumn<ScanResult, Number>
-    @FXML
-    lateinit var colTrades: TableColumn<ScanResult, Number>
-    @FXML
-    lateinit var colWinRate: TableColumn<ScanResult, String>
-    @FXML
-    lateinit var colPf: TableColumn<ScanResult, String>
-    @FXML
-    lateinit var colMaxDd: TableColumn<ScanResult, String>
+    @FXML lateinit var colSymbol: TableColumn<ScanResult, String>
+    @FXML lateinit var colVerdict: TableColumn<ScanResult, String>
+    @FXML lateinit var colScore: TableColumn<ScanResult, Number>
+    @FXML lateinit var colTrades: TableColumn<ScanResult, Number>
+    @FXML lateinit var colWinRate: TableColumn<ScanResult, String>
+    @FXML lateinit var colPf: TableColumn<ScanResult, String>
+    @FXML lateinit var colMaxDd: TableColumn<ScanResult, String>
 
     /* =========================
        UI – Right panel
        ========================= */
-    @FXML
-    lateinit var analyzeBtn: Button
-    @FXML
-    lateinit var cancelBtn: Button
-    @FXML
-    lateinit var progressBar: ProgressBar
-    @FXML
-    lateinit var statusLabel: Label
-    @FXML
-    lateinit var progressTextLabel: Label
+    @FXML lateinit var analyzeBtn: Button
+    @FXML lateinit var cancelBtn: Button
+    @FXML lateinit var progressBar: ProgressBar
+    @FXML lateinit var statusLabel: Label
+    @FXML lateinit var progressTextLabel: Label
 
     // Filters
-    @FXML
-    private lateinit var minTradesSlider: Slider
-    @FXML
-    private lateinit var minTradesValueLabel: Label
-    @FXML
-    private lateinit var minScoreSlider: Slider
-    @FXML
-    private lateinit var minScoreValueLabel: Label
-    @FXML
-    private lateinit var minVolatilityField: TextField
-    @FXML
-    private lateinit var hideLowSampleCheck: CheckBox
+    @FXML private lateinit var minTradesSlider: Slider
+    @FXML private lateinit var minTradesValueLabel: Label
+    @FXML private lateinit var minScoreSlider: Slider
+    @FXML private lateinit var minScoreValueLabel: Label
+    @FXML private lateinit var minVolatilityField: TextField
+    @FXML private lateinit var hideLowSampleCheck: CheckBox
 
     /* =========================
        Runtime
@@ -146,18 +112,16 @@ class MarketAnalyzerController {
     private val allSymbols = FXCollections.observableArrayList<String>()
     private lateinit var filteredSymbols: FilteredList<String>
 
-    // source toggle
-    @FXML
-    private lateinit var manualToggle: ToggleButton
-    @FXML
-    private lateinit var autoPickToggle: ToggleButton
+    // ✅ checkbox state
+    private val selectedMap = ConcurrentHashMap<String, BooleanProperty>()
 
-    @FXML
-    private lateinit var autoPickTopVolumeRadio: RadioButton
-    @FXML
-    private lateinit var autoPickRandomRadio: RadioButton
-    @FXML
-    private lateinit var autoPickGainersRadio: RadioButton
+    // source toggle
+    @FXML private lateinit var manualToggle: ToggleButton
+    @FXML private lateinit var autoPickToggle: ToggleButton
+
+    @FXML private lateinit var autoPickTopVolumeRadio: RadioButton
+    @FXML private lateinit var autoPickRandomRadio: RadioButton
+    @FXML private lateinit var autoPickGainersRadio: RadioButton
 
     private val sourceGroup = ToggleGroup()
     private val autoPickGroup = ToggleGroup()
@@ -177,7 +141,7 @@ class MarketAnalyzerController {
 
     private var activePrefix: AnalyzeKeyPrefix? = null
 
-    // Strategy selection (Cách 3)
+    // Strategy selection
     private val selectionCache = mutableMapOf<com.daemonz.core.strategy.StrategyId, StrategySelection>()
     private var currentSelection: StrategySelection? = null
 
@@ -187,13 +151,12 @@ class MarketAnalyzerController {
     @FXML
     fun initialize() {
         setupTopBar()
-        setupSymbolList()
+        setupSymbolList() // ✅ checkbox list
         setupTable()
         setupFilters()
 
         analyzeBtn.setOnAction { startAnalyze() }
         cancelBtn.setOnAction { runningJob?.cancel() }
-        clearSelectionBtn.setOnAction { symbolListView.selectionModel.clearSelection() }
 
         setStatus(AppStatus.IDLE)
         progressBar.progress = 0.0
@@ -232,7 +195,6 @@ class MarketAnalyzerController {
             }
         }
 
-        // Init selection + cache by strategy
         fun ensureSelectionFor(spec: StrategySpec<*>): StrategySelection {
             val sel = selectionCache.getOrPut(spec.id) { spec.newSelectionAny() }
             currentSelection = sel
@@ -242,8 +204,6 @@ class MarketAnalyzerController {
         strategyCombo.valueProperty().addListener { _, _, newSpec ->
             if (newSpec != null) ensureSelectionFor(newSpec)
         }
-
-        // Ensure first selection exists
         ensureSelectionFor(strategyCombo.value ?: StrategyRegistry.all.first())
 
         intervalCombo.items.setAll(Timeframe.entries.toList())
@@ -259,25 +219,93 @@ class MarketAnalyzerController {
         equityField.text = "10000"
     }
 
+    /**
+     * ✅ Symbol list as checkbox (fix: stable binding with cell reuse)
+     */
     private fun setupSymbolList() {
         filteredSymbols = FilteredList(allSymbols) { true }
         symbolListView.items = filteredSymbols
-        symbolListView.selectionModel.selectionMode = SelectionMode.MULTIPLE
+        symbolListView.selectionModel.selectionMode = SelectionMode.SINGLE
 
-        symbolSearchField.textProperty().addListener { _, _, q ->
-            val key = q?.uppercase()?.trim().orEmpty()
-            filteredSymbols.setPredicate { s ->
-                key.isEmpty() || s.contains(key)
+        allSymbols.addListener(ListChangeListener<String> { ch ->
+            while (ch.next()) {
+                if (ch.wasAdded()) ch.addedSubList.forEach { ensurePropFor(it) }
+            }
+            updateSelectedCount()
+        })
+
+        symbolListView.setCellFactory {
+            object : ListCell<String>() {
+                private val cb = CheckBox()
+                private var boundProp: BooleanProperty? = null
+
+                init {
+                    // click row (not checkbox) toggles too
+                    setOnMouseClicked { e ->
+                        val sym = item ?: return@setOnMouseClicked
+                        if (e.clickCount == 1 && e.target !is CheckBox) {
+                            val p = ensurePropFor(sym)
+                            p.set(!p.get())
+                        }
+                    }
+                }
+
+                override fun updateItem(item: String?, empty: Boolean) {
+                    super.updateItem(item, empty)
+
+                    // unbind old property first (cell reuse fix)
+                    boundProp?.let { old ->
+                        cb.selectedProperty().unbindBidirectional(old)
+                    }
+                    boundProp = null
+
+                    if (empty || item == null) {
+                        cb.text = null
+                        graphic = null
+                        text = null
+                        return
+                    }
+
+                    cb.text = item
+                    val newProp = ensurePropFor(item)
+                    cb.selectedProperty().bindBidirectional(newProp)
+                    boundProp = newProp
+
+                    graphic = cb
+                    text = null
+                }
             }
         }
 
-        symbolListView.selectionModel.selectedItems.addListener(
-            ListChangeListener<String> {
-                selectedCountLabel.text =
-                    "Selected: ${symbolListView.selectionModel.selectedItems.size}"
-            }
-        )
+        symbolSearchField.textProperty().addListener { _, _, q ->
+            val key = q?.uppercase()?.trim().orEmpty()
+            filteredSymbols.setPredicate { s -> key.isEmpty() || s.contains(key) }
+        }
+
+        clearSelectionBtn.setOnAction {
+            selectedMap.values.forEach { it.set(false) }
+            updateSelectedCount()
+            symbolListView.refresh()
+        }
+
+        updateSelectedCount()
     }
+
+    private fun ensurePropFor(symbol: String): BooleanProperty {
+        return selectedMap.computeIfAbsent(symbol) {
+            SimpleBooleanProperty(false).also { p ->
+                p.addListener { _, _, _ -> updateSelectedCount() }
+            }
+        }
+    }
+
+    private fun updateSelectedCount() {
+        val n = selectedMap.values.count { it.get() }
+        selectedCountLabel.text = "Selected: $n"
+    }
+
+    private fun selectedSymbols(): List<String> =
+        selectedMap.entries.filter { it.value.get() }.map { it.key }
 
     private fun setupTable() {
         colSymbol.setCellValueFactory { SimpleStringProperty(it.value.symbol) }
@@ -306,7 +334,6 @@ class MarketAnalyzerController {
 
         filteredResults = FilteredList(resultsSource) { true }
         resultsTable.items = filteredResults
-
         resultsCountLabel.text = "0 results"
 
         resultsTable.setRowFactory {
@@ -329,9 +356,7 @@ class MarketAnalyzerController {
         minScoreSlider.value = 50.0
         minScoreValueLabel.text = "50"
 
-        if (minVolatilityField.text.isNullOrBlank()) {
-            minVolatilityField.text = "1.5"
-        }
+        if (minVolatilityField.text.isNullOrBlank()) minVolatilityField.text = "1.5"
 
         minTradesSlider.valueProperty().addListener { _, _, v ->
             minTradesValueLabel.text = v.toInt().toString()
@@ -343,6 +368,7 @@ class MarketAnalyzerController {
         }
         minVolatilityField.textProperty().addListener { _, _, _ -> applyResultFilters() }
         hideLowSampleCheck.selectedProperty().addListener { _, _, _ -> applyResultFilters() }
+
         applyFiltersCheck.selectedProperty().addListener { _, _, enabled ->
             minTradesSlider.isDisable = !enabled
             minScoreSlider.isDisable = !enabled
@@ -361,24 +387,17 @@ class MarketAnalyzerController {
         val hideLowSample = hideLowSampleCheck.isSelected
         val minVol = minVolatilityField.text.toDoubleOrNull() ?: 0.0
 
-        // Detect StepB-like results: đa số metrics trống / trades = 0
-        // (Backtest thật thường có trades > 0 ở nhiều dòng, StepB thì 100% trades=0)
         val isStepB = resultsSource.isNotEmpty() && resultsSource.all { it.metrics.trades == 0 }
 
         filteredResults.setPredicate { r ->
             if (!enabled) return@setPredicate true
-
-            // luôn filter theo score trước
             if (r.score < minScore) return@setPredicate false
 
-            // luôn filter theo volatility nếu có
             val vol = volatilityCache[keyForSymbol(r.symbol)] ?: 0.0
             if (vol < minVol) return@setPredicate false
 
-            // Step B: không filter theo trades / low sample
             if (isStepB) return@setPredicate true
 
-            // Backtest mode: filter trades như cũ
             if (r.metrics.trades < minTrades) return@setPredicate false
             if (hideLowSample && r.metrics.trades < 10) return@setPredicate false
 
@@ -389,7 +408,6 @@ class MarketAnalyzerController {
             if (isStepB) "Shown ${filteredResults.size} / Raw ${resultsSource.size} (Step B)"
             else "Shown ${filteredResults.size} / Raw ${resultsSource.size}"
     }
-
 
     private fun snapshotPrefixFromUI(): AnalyzeKeyPrefix {
         val spec = strategyCombo.value ?: StrategyRegistry.all.first()
@@ -438,19 +456,18 @@ class MarketAnalyzerController {
         }
     }
 
-    /* =========================
-       Load symbols
-       ========================= */
     private suspend fun loadSymbols() {
         setStatus(AppStatus.LOADING_SYMBOLS)
         progressBar.progress = -1.0
 
         try {
             val exchange = buildExchange()
-            val list = withContext(Dispatchers.IO) {
-                exchange.listTradableSymbols()
-            }
+            val list = withContext(Dispatchers.IO) { exchange.listTradableSymbols() }
+
             allSymbols.setAll(list.sorted())
+            allSymbols.forEach { ensurePropFor(it) }
+            updateSelectedCount()
+
             setStatus(AppStatus.IDLE)
         } catch (e: Exception) {
             setStatus(AppStatus.ERROR)
@@ -460,11 +477,8 @@ class MarketAnalyzerController {
         }
     }
 
-    /* =========================
-       Analyze
-       ========================= */
     private fun startAnalyze() {
-        val useStepB = true // xài tạm
+        val useStepB = true
         if (runningJob?.isActive == true) return
 
         activePrefix = snapshotPrefixFromUI()
@@ -472,10 +486,9 @@ class MarketAnalyzerController {
         volatilityCache.clear()
         backtestCache.clear()
 
-        val selected = symbolListView.selectionModel.selectedItems.toList()
+        val selected = selectedSymbols()
         val interval = intervalCombo.value ?: Timeframe.M15
         val limit = (historyCombo.value ?: 1500).coerceAtMost(1500)
-
         val isAuto = autoPickToggle.isSelected
 
         val request = ScanRequest(
@@ -498,7 +511,7 @@ class MarketAnalyzerController {
             try {
                 val results = withContext(Dispatchers.IO) {
 
-                    val onProgressCb: suspend (Int, Int, String) -> Unit = { done, total, sym ->
+                    val onProgressCb: suspend (Int, Int, String) -> Unit = { done, total, _ ->
                         withContext(Dispatchers.JavaFx) {
                             progressBar.progress = if (total > 0) done.toDouble() / total else 0.0
                             progressTextLabel.text = "$done/$total"
@@ -513,7 +526,6 @@ class MarketAnalyzerController {
                         runStepB(scanner, request, onProgressCb, onVolCb)
                     } else {
                         if (isAuto) {
-                            val (strategy, params) = provideStrategyFromCombo()
                             val autoCfg = AutoPickConfig(
                                 count = 5,
                                 poolSize = 150,
@@ -527,6 +539,7 @@ class MarketAnalyzerController {
                                 excludeStablecoins = false,
                                 excludeLeveragedTokens = false
                             )
+
                             scanner.autoPickAnalyzeTopTrades(
                                 req = request,
                                 auto = autoCfg,
@@ -537,7 +550,6 @@ class MarketAnalyzerController {
                                 onVolatility = onVolCb
                             )
                         } else {
-                            val (strategy, params) = provideStrategyFromCombo()
                             scanner.analyze(
                                 req = request,
                                 strategy = strategy,
@@ -548,7 +560,6 @@ class MarketAnalyzerController {
                         }
                     }
                 }
-
 
                 resultsSource.setAll(results)
                 applyResultFilters()
@@ -566,13 +577,8 @@ class MarketAnalyzerController {
         }
     }
 
-    /* =========================
-       Builders
-       ========================= */
     private fun buildExchange(): com.daemonz.adapters.exchange.ExchangeAdapter {
-        val auth = requireNotNull(SystemConfig.auth) {
-            "Authentication required"
-        }
+        val auth = requireNotNull(SystemConfig.auth) { "Authentication required" }
 
         val cfg = BinanceConfig(
             apiKey = auth.apiKey,
@@ -590,7 +596,6 @@ class MarketAnalyzerController {
 
     private fun provideStrategyFromCombo(): Pair<com.daemonz.core.strategy.Strategy<Any>, Any> {
         val spec = strategyCombo.value ?: StrategyRegistry.all.first()
-
         val sel = currentSelection
             ?: selectionCache.getOrPut(spec.id) { spec.newSelectionAny() }.also { currentSelection = it }
 
@@ -604,6 +609,7 @@ class MarketAnalyzerController {
         analyzeBtn.isDisable = status.isBusy
         progressBar.isVisible = status.isBusy
     }
+
     private suspend fun runStepB(
         scanner: MarketScannerService,
         request: ScanRequest,
@@ -620,76 +626,25 @@ class MarketAnalyzerController {
         )
 
         return when (spec.id.value) {
+            "atr_donchian_breakout_v1" -> scanner.analyzeStepB(
+                req = request,
+                params = AtrDonchianBreakoutV1CompatibilityParams(),
+                compat = AtrDonchianBreakoutV1Compatibility(),
+                config = cfg,
+                onProgress = onProgress,
+                onVolatility = onVolatility
+            )
 
-            "atr_donchian_breakout_v1" -> {
-                scanner.analyzeStepB(
-                    req = request,
-                    params = AtrDonchianBreakoutV1CompatibilityParams(),
-                    compat = AtrDonchianBreakoutV1Compatibility(),
-                    config = cfg,
-                    onProgress = onProgress,
-                    onVolatility = onVolatility
-                )
-            }
-
-            "ema_pullback_v7" -> {
-                scanner.analyzeStepB(
-                    req = request,
-                    params = EmaPullbackV7CompatibilityParams(),
-                    compat = EmaPullbackV7Compatibility(),
-                    config = cfg,
-                    onProgress = onProgress,
-                    onVolatility = onVolatility
-                )
-            }
+            "ema_pullback_v7" -> scanner.analyzeStepB(
+                req = request,
+                params = EmaPullbackV7CompatibilityParams(),
+                compat = EmaPullbackV7Compatibility(),
+                config = cfg,
+                onProgress = onProgress,
+                onVolatility = onVolatility
+            )
 
             else -> emptyList()
         }
     }
-
-    private suspend fun runBacktest(
-        scanner: MarketScannerService,
-        request: ScanRequest,
-        isAuto: Boolean,
-        onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit,
-        onVolatility: suspend (symbol: String, volPct: Double) -> Unit
-    ): List<ScanResult> {
-        val (strategy, params) = provideStrategyFromCombo()
-
-        return if (isAuto) {
-            val autoCfg = AutoPickConfig(
-                count = 5,
-                poolSize = 150,
-                maxPoolSize = 300,
-                stepSize = 60,
-                logic = when {
-                    autoPickTopVolumeRadio.isSelected -> AutoPickLogic.TOP_BY_VOLUME
-                    autoPickGainersRadio.isSelected -> AutoPickLogic.TOP_GAINERS_24H
-                    else -> AutoPickLogic.RANDOM_DIVERSITY
-                },
-                excludeStablecoins = false,
-                excludeLeveragedTokens = false
-            )
-
-            scanner.autoPickAnalyzeTopTrades(
-                req = request,
-                auto = autoCfg,
-                strategy = strategy,
-                params = params,
-                onProgress = onProgress,
-                onDetail = { symbol, bt -> backtestCache[keyForSymbol(symbol)] = bt },
-                onVolatility = onVolatility
-            )
-        } else {
-            scanner.analyze(
-                req = request,
-                strategy = strategy,
-                params = params,
-                onProgress = onProgress,
-                onVolatility = onVolatility
-            )
-        }
-    }
-
-
 }
