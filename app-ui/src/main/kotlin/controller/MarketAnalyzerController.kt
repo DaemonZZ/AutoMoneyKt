@@ -2,7 +2,6 @@ package com.daemonz.controller
 
 import com.daemonz.adapters.binance.BinanceConfig
 import com.daemonz.adapters.binance.BinanceFuturesAdapter
-import com.daemonz.core.analysis.StrategyCompatibility
 import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
 import com.daemonz.core.risk.RiskConfig
@@ -13,9 +12,9 @@ import com.daemonz.runtime.scanner.MarketScannerService
 import com.daemonz.runtime.scanner.ScanRequest
 import com.daemonz.runtime.scanner.ScanResult
 import com.daemonz.runtime.status.AppStatus
-import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
-import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Params
 import com.daemonz.strategies.registry.StrategyRegistry
+import com.daemonz.strategies.registry.StrategySelection
+import com.daemonz.strategies.registry.newSelectionAny
 import com.daemonz.utils.Mode
 import com.daemonz.utils.SystemConfig
 import javafx.beans.property.SimpleIntegerProperty
@@ -34,6 +33,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToInt
+import com.daemonz.runtime.scanner.StepBConfig
+import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Compatibility
+import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1CompatibilityParams
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7CompatibilityParams
+
 
 private data class AnalyzeCacheKey(
     val symbol: String,
@@ -47,11 +52,9 @@ class MarketAnalyzerController {
 
     lateinit var applyFiltersCheck: CheckBox
 
-    // ✅ FIX: colVolPct phải là String (vì hiển thị "1.23")
     @FXML
     lateinit var colVolPct: TableColumn<ScanResult, String>
 
-    // (nếu bạn có nút này trong FXML)
     @FXML
     lateinit var autoPickBtn: Button
 
@@ -162,11 +165,9 @@ class MarketAnalyzerController {
     private val resultsSource = FXCollections.observableArrayList<ScanResult>()
     private lateinit var filteredResults: FilteredList<ScanResult>
 
-    // ✅ FIX: cache key phải dùng AnalyzeCacheKey để mở detail đúng
     private val backtestCache = ConcurrentHashMap<AnalyzeCacheKey, BacktestResult>()
     private val volatilityCache = ConcurrentHashMap<AnalyzeCacheKey, Double>()
 
-    // ✅ FIX: freeze prefix trong mỗi lần analyze để cache key ổn định (tránh user đổi combo rồi click detail bị miss)
     private data class AnalyzeKeyPrefix(
         val strategyKey: String,
         val interval: Timeframe,
@@ -175,6 +176,10 @@ class MarketAnalyzerController {
     )
 
     private var activePrefix: AnalyzeKeyPrefix? = null
+
+    // Strategy selection (Cách 3)
+    private val selectionCache = mutableMapOf<com.daemonz.core.strategy.StrategyId, StrategySelection>()
+    private var currentSelection: StrategySelection? = null
 
     /* =========================
        Init
@@ -227,7 +232,20 @@ class MarketAnalyzerController {
             }
         }
 
-        // ✅ FIX: setAll không có -> dùng items.setAll
+        // Init selection + cache by strategy
+        fun ensureSelectionFor(spec: StrategySpec<*>): StrategySelection {
+            val sel = selectionCache.getOrPut(spec.id) { spec.newSelectionAny() }
+            currentSelection = sel
+            return sel
+        }
+
+        strategyCombo.valueProperty().addListener { _, _, newSpec ->
+            if (newSpec != null) ensureSelectionFor(newSpec)
+        }
+
+        // Ensure first selection exists
+        ensureSelectionFor(strategyCombo.value ?: StrategyRegistry.all.first())
+
         intervalCombo.items.setAll(Timeframe.entries.toList())
         intervalCombo.selectionModel.select(Timeframe.M15)
 
@@ -235,7 +253,6 @@ class MarketAnalyzerController {
         historyCombo.selectionModel.selectLast()
 
         modeCombo.items = FXCollections.observableArrayList(Mode.entries.map { it.label })
-        // ✅ FIX: chọn theo label thay vì name
         modeCombo.selectionModel.select(SystemConfig.mode.label)
 
         riskField.text = "1.0"
@@ -268,7 +285,6 @@ class MarketAnalyzerController {
         colScore.setCellValueFactory { SimpleIntegerProperty(it.value.score) }
         colTrades.setCellValueFactory { SimpleIntegerProperty(it.value.metrics.trades) }
 
-        // ✅ FIX: colVolPct trả StringProperty
         colVolPct.setCellValueFactory { cell ->
             val vol = volatilityCache[keyForSymbol(cell.value.symbol)] ?: 0.0
             SimpleStringProperty("%.2f".format(vol))
@@ -328,12 +344,10 @@ class MarketAnalyzerController {
         minVolatilityField.textProperty().addListener { _, _, _ -> applyResultFilters() }
         hideLowSampleCheck.selectedProperty().addListener { _, _, _ -> applyResultFilters() }
         applyFiltersCheck.selectedProperty().addListener { _, _, enabled ->
-            // disable/enable các control còn lại
             minTradesSlider.isDisable = !enabled
             minScoreSlider.isDisable = !enabled
             minVolatilityField.isDisable = !enabled
             hideLowSampleCheck.isDisable = !enabled
-
             applyResultFilters()
         }
         applyResultFilters()
@@ -347,24 +361,36 @@ class MarketAnalyzerController {
         val hideLowSample = hideLowSampleCheck.isSelected
         val minVol = minVolatilityField.text.toDoubleOrNull() ?: 0.0
 
+        // Detect StepB-like results: đa số metrics trống / trades = 0
+        // (Backtest thật thường có trades > 0 ở nhiều dòng, StepB thì 100% trades=0)
+        val isStepB = resultsSource.isNotEmpty() && resultsSource.all { it.metrics.trades == 0 }
+
         filteredResults.setPredicate { r ->
             if (!enabled) return@setPredicate true
 
-            if (r.metrics.trades < minTrades) return@setPredicate false
+            // luôn filter theo score trước
             if (r.score < minScore) return@setPredicate false
-            if (hideLowSample && r.metrics.trades < 10) return@setPredicate false
 
+            // luôn filter theo volatility nếu có
             val vol = volatilityCache[keyForSymbol(r.symbol)] ?: 0.0
             if (vol < minVol) return@setPredicate false
+
+            // Step B: không filter theo trades / low sample
+            if (isStepB) return@setPredicate true
+
+            // Backtest mode: filter trades như cũ
+            if (r.metrics.trades < minTrades) return@setPredicate false
+            if (hideLowSample && r.metrics.trades < 10) return@setPredicate false
 
             true
         }
 
-        resultsCountLabel.text = "Shown ${filteredResults.size} / Raw ${resultsSource.size}"
+        resultsCountLabel.text =
+            if (isStepB) "Shown ${filteredResults.size} / Raw ${resultsSource.size} (Step B)"
+            else "Shown ${filteredResults.size} / Raw ${resultsSource.size}"
     }
 
 
-    // ✅ FIX: keyForSymbol phải dùng prefix snapshot (activePrefix) để ổn định
     private fun snapshotPrefixFromUI(): AnalyzeKeyPrefix {
         val spec = strategyCombo.value ?: StrategyRegistry.all.first()
         val interval = intervalCombo.value ?: Timeframe.M15
@@ -438,9 +464,9 @@ class MarketAnalyzerController {
        Analyze
        ========================= */
     private fun startAnalyze() {
+        val useStepB = true // xài tạm
         if (runningJob?.isActive == true) return
 
-        // ✅ freeze prefix cho lần analyze này
         activePrefix = snapshotPrefixFromUI()
 
         volatilityCache.clear()
@@ -472,58 +498,57 @@ class MarketAnalyzerController {
             try {
                 val results = withContext(Dispatchers.IO) {
 
-                    if (isAuto) {
-                        val autoCfg = AutoPickConfig(
-                            count = 5,
-                            poolSize = 150,
-                            maxPoolSize = 300,
-                            stepSize = 60,
-                            logic = when {
-                                autoPickTopVolumeRadio.isSelected -> AutoPickLogic.TOP_BY_VOLUME
-                                autoPickGainersRadio.isSelected -> AutoPickLogic.TOP_GAINERS_24H
-                                else -> AutoPickLogic.RANDOM_DIVERSITY
-                            },
-                            excludeStablecoins = false,
-                            excludeLeveragedTokens = false
-                        )
+                    val onProgressCb: suspend (Int, Int, String) -> Unit = { done, total, sym ->
+                        withContext(Dispatchers.JavaFx) {
+                            progressBar.progress = if (total > 0) done.toDouble() / total else 0.0
+                            progressTextLabel.text = "$done/$total"
+                        }
+                    }
 
-                        scanner.autoPickAnalyzeTopTrades(
-                            req = request,
-                            auto = autoCfg,
-                            strategy = strategy,
-                            params = params,
-                            onProgress = { done, total, sym ->
-                                withContext(Dispatchers.JavaFx) {
-                                    progressBar.progress = if (total > 0) done.toDouble() / total else 0.0
-                                    progressTextLabel.text = "$done/$total"
-                                }
-                            },
-                            onDetail = { symbol, bt ->
-                                backtestCache[keyForSymbol(symbol)] = bt
-                            },
-                            onVolatility = { symbol, volPct ->
-                                volatilityCache[keyForSymbol(symbol)] = volPct
-                            }
-                        )
+                    val onVolCb: suspend (String, Double) -> Unit = { symbol, volPct ->
+                        volatilityCache[keyForSymbol(symbol)] = volPct
+                    }
+
+                    if (useStepB) {
+                        runStepB(scanner, request, onProgressCb, onVolCb)
                     } else {
-                        val compat: StrategyCompatibility<EmaPullbackV7Params> = EmaPullbackV7Compatibility()
-                        val p = params as EmaPullbackV7Params
-                        scanner.analyzeStepB(
-                            req = request,
-                            params = p,
-                            compat = compat,
-                            onProgress = { done, total, sym ->
-                                withContext(Dispatchers.JavaFx) {
-                                    progressBar.progress = if (total > 0) done.toDouble() / total else 0.0
-                                    progressTextLabel.text = "$done/$total"
-                                }
-                            },
-                            onVolatility = { symbol, volPct ->
-                                volatilityCache[keyForSymbol(symbol)] = volPct
-                            }
-                        )
+                        if (isAuto) {
+                            val (strategy, params) = provideStrategyFromCombo()
+                            val autoCfg = AutoPickConfig(
+                                count = 5,
+                                poolSize = 150,
+                                maxPoolSize = 300,
+                                stepSize = 60,
+                                logic = when {
+                                    autoPickTopVolumeRadio.isSelected -> AutoPickLogic.TOP_BY_VOLUME
+                                    autoPickGainersRadio.isSelected -> AutoPickLogic.TOP_GAINERS_24H
+                                    else -> AutoPickLogic.RANDOM_DIVERSITY
+                                },
+                                excludeStablecoins = false,
+                                excludeLeveragedTokens = false
+                            )
+                            scanner.autoPickAnalyzeTopTrades(
+                                req = request,
+                                auto = autoCfg,
+                                strategy = strategy,
+                                params = params,
+                                onProgress = onProgressCb,
+                                onDetail = { symbol, bt -> backtestCache[keyForSymbol(symbol)] = bt },
+                                onVolatility = onVolCb
+                            )
+                        } else {
+                            val (strategy, params) = provideStrategyFromCombo()
+                            scanner.analyze(
+                                req = request,
+                                strategy = strategy,
+                                params = params,
+                                onProgress = onProgressCb,
+                                onVolatility = onVolCb
+                            )
+                        }
                     }
                 }
+
 
                 resultsSource.setAll(results)
                 applyResultFilters()
@@ -565,9 +590,12 @@ class MarketAnalyzerController {
 
     private fun provideStrategyFromCombo(): Pair<com.daemonz.core.strategy.Strategy<Any>, Any> {
         val spec = strategyCombo.value ?: StrategyRegistry.all.first()
-        val anySpec = spec as StrategySpec<Any>
-        val params = anySpec.defaultParams()
-        val strategy = anySpec.build(params)
+
+        val sel = currentSelection
+            ?: selectionCache.getOrPut(spec.id) { spec.newSelectionAny() }.also { currentSelection = it }
+
+        val params = sel.paramsAny()
+        val strategy = sel.buildStrategyAny()
         return strategy to params
     }
 
@@ -576,4 +604,92 @@ class MarketAnalyzerController {
         analyzeBtn.isDisable = status.isBusy
         progressBar.isVisible = status.isBusy
     }
+    private suspend fun runStepB(
+        scanner: MarketScannerService,
+        request: ScanRequest,
+        onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit,
+        onVolatility: suspend (symbol: String, volPct: Double) -> Unit
+    ): List<ScanResult> {
+        val spec = strategyCombo.value ?: StrategyRegistry.all.first()
+
+        val cfg = StepBConfig(
+            applyFilters = applyFiltersCheck.isSelected,
+            maxConcurrency = 6,
+            weightMarket = 0.5,
+            weightCompat = 0.5
+        )
+
+        return when (spec.id.value) {
+
+            "atr_donchian_breakout_v1" -> {
+                scanner.analyzeStepB(
+                    req = request,
+                    params = AtrDonchianBreakoutV1CompatibilityParams(),
+                    compat = AtrDonchianBreakoutV1Compatibility(),
+                    config = cfg,
+                    onProgress = onProgress,
+                    onVolatility = onVolatility
+                )
+            }
+
+            "ema_pullback_v7" -> {
+                scanner.analyzeStepB(
+                    req = request,
+                    params = EmaPullbackV7CompatibilityParams(),
+                    compat = EmaPullbackV7Compatibility(),
+                    config = cfg,
+                    onProgress = onProgress,
+                    onVolatility = onVolatility
+                )
+            }
+
+            else -> emptyList()
+        }
+    }
+
+    private suspend fun runBacktest(
+        scanner: MarketScannerService,
+        request: ScanRequest,
+        isAuto: Boolean,
+        onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit,
+        onVolatility: suspend (symbol: String, volPct: Double) -> Unit
+    ): List<ScanResult> {
+        val (strategy, params) = provideStrategyFromCombo()
+
+        return if (isAuto) {
+            val autoCfg = AutoPickConfig(
+                count = 5,
+                poolSize = 150,
+                maxPoolSize = 300,
+                stepSize = 60,
+                logic = when {
+                    autoPickTopVolumeRadio.isSelected -> AutoPickLogic.TOP_BY_VOLUME
+                    autoPickGainersRadio.isSelected -> AutoPickLogic.TOP_GAINERS_24H
+                    else -> AutoPickLogic.RANDOM_DIVERSITY
+                },
+                excludeStablecoins = false,
+                excludeLeveragedTokens = false
+            )
+
+            scanner.autoPickAnalyzeTopTrades(
+                req = request,
+                auto = autoCfg,
+                strategy = strategy,
+                params = params,
+                onProgress = onProgress,
+                onDetail = { symbol, bt -> backtestCache[keyForSymbol(symbol)] = bt },
+                onVolatility = onVolatility
+            )
+        } else {
+            scanner.analyze(
+                req = request,
+                strategy = strategy,
+                params = params,
+                onProgress = onProgress,
+                onVolatility = onVolatility
+            )
+        }
+    }
+
+
 }

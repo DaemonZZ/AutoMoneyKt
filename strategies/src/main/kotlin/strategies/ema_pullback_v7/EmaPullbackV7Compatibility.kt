@@ -4,9 +4,9 @@ import com.daemonz.core.analysis.CompatibilityScore
 import com.daemonz.core.analysis.MarketStats
 import com.daemonz.core.analysis.StrategyCompatibility
 
-class EmaPullbackV7Compatibility : StrategyCompatibility<EmaPullbackV7Params> {
+class EmaPullbackV7Compatibility : StrategyCompatibility<EmaPullbackV7CompatibilityParams> {
 
-    override fun compatibility(stats: MarketStats, params: EmaPullbackV7Params): CompatibilityScore {
+    override fun compatibility(stats: MarketStats, params: EmaPullbackV7CompatibilityParams): CompatibilityScore {
         val reasons = mutableListOf<String>()
 
         // --- gates (ghi reasons, nhưng không "đóng băng" score dưới 30 nữa) ---
