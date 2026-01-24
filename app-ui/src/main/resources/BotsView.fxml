@@ -1,27 +1,165 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.daemonz.controller.BotsController"
+            prefWidth="1280.0" prefHeight="720.0">
 
-<SplitPane dividerPositions="0.5" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
-           nodeOrientation="LEFT_TO_RIGHT" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12"
-           xmlns:fx="http://javafx.com/fxml/1">
-    <items>
-        <VBox prefHeight="243.0" prefWidth="598.0"/>
-        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
-            <tabs>
-                <Tab text="Untitled Tab 1">
-                    <content>
-                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"/>
-                    </content>
-                </Tab>
-                <Tab text="Untitled Tab 2">
-                    <content>
-                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"/>
-                    </content>
-                </Tab>
-            </tabs>
-        </TabPane>
-    </items>
-</SplitPane>
+    <top>
+        <HBox spacing="10" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="10" right="12" bottom="10" left="12"/>
+            </padding>
+
+            <Label text="Refined Pro"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="searchField" promptText="Search bots or logs" prefWidth="320"/>
+            <Button fx:id="btnDeployBot" text="Deploy Bot"/>
+            <Button fx:id="btnSettings" text="Settings"/>
+            <Button fx:id="btnUser" text="User"/>
+        </HBox>
+    </top>
+
+
+    <center>
+        <SplitPane dividerPositions="0.52" BorderPane.alignment="CENTER">
+
+            <!-- LEFT: BOT LIST -->
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <HBox spacing="10">
+                    <VBox spacing="2">
+                        <Label text="Active Bot Fleet"/>
+                        <Label fx:id="lblFleetCount" text="0 bots"/>
+                    </VBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Label text="Mode"/>
+                    <ComboBox fx:id="modeFilterCombo" prefWidth="110"/>
+
+                    <Label text="Status"/>
+                    <ComboBox fx:id="statusFilterCombo" prefWidth="130"/>
+                </HBox>
+
+                <TableView fx:id="botsTable">
+                    <columns>
+                        <TableColumn fx:id="colBotName" text="BOT NAME" prefWidth="180"/>
+                        <TableColumn fx:id="colSymbol" text="SYMBOL" prefWidth="120"/>
+                        <TableColumn fx:id="colStatus" text="STATUS" prefWidth="110"/>
+                        <TableColumn fx:id="colMode" text="MODE" prefWidth="95"/>
+                    </columns>
+                    <VBox.vgrow>ALWAYS</VBox.vgrow>
+                </TableView>
+
+                <HBox spacing="8">
+                    <Label text="Bulk actions"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnBulkStart" text="Start"/>
+                    <Button fx:id="btnBulkPause" text="Pause"/>
+                    <Button fx:id="btnBulkStop" text="Stop"/>
+                </HBox>
+            </VBox>
+
+            <!-- RIGHT: BOT DETAIL -->
+            <VBox spacing="12">
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <HBox spacing="10">
+                    <VBox spacing="3">
+                        <HBox spacing="8">
+                            <Label fx:id="lblBotTitle" text="ScalpMaster-01"/>
+                            <Label fx:id="lblBotStatusBadge" text="RUNNING"/>
+                        </HBox>
+                        <Label fx:id="lblBotSubtitle" text="Uptime: --"/>
+                    </VBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="btnStart" text="Start"/>
+                    <Button fx:id="btnPause" text="Pause"/>
+                    <Button fx:id="btnStop" text="Stop"/>
+                </HBox>
+
+                <!-- METRICS -->
+                <HBox spacing="10">
+                    <VBox spacing="6" prefWidth="170">
+                        <Label text="TOTAL PNL"/>
+                        <Label fx:id="lblTotalPnl" text="0.00"/>
+                        <Label fx:id="lblPnlHint" text="--"/>
+                    </VBox>
+
+                    <VBox spacing="6" prefWidth="170">
+                        <Label text="WIN RATE"/>
+                        <Label fx:id="lblWinRate" text="--"/>
+                        <Label fx:id="lblTrades" text="Trades: 0"/>
+                    </VBox>
+
+                    <VBox spacing="6" prefWidth="170">
+                        <Label text="ACTIVE EXPOSURE"/>
+                        <Label fx:id="lblExposure" text="--"/>
+                        <Label fx:id="lblPositions" text="Positions: 0"/>
+                    </VBox>
+
+                    <VBox spacing="6" prefWidth="170">
+                        <Label text="HEALTH SCORE"/>
+                        <Label fx:id="lblHealth" text="--/100"/>
+                        <Label fx:id="lblLatency" text="Latency: --"/>
+                    </VBox>
+                </HBox>
+
+                <!-- LOG -->
+                <VBox spacing="8">
+                    <HBox spacing="10">
+                        <Label text="LIVE EXECUTION LOG"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <CheckBox fx:id="chkAutoScroll" text="Auto-scroll" selected="true"/>
+                        <Button fx:id="btnExportLog" text="Export"/>
+                        <Button fx:id="btnClearLog" text="Clear"/>
+                    </HBox>
+
+                    <TextArea fx:id="logArea" wrapText="false" prefRowCount="12">
+                        <VBox.vgrow>ALWAYS</VBox.vgrow>
+                    </TextArea>
+
+                    <VBox.vgrow>ALWAYS</VBox.vgrow>
+                </VBox>
+
+                <HBox spacing="8">
+                    <Button fx:id="btnViewTrades" text="View Trades"/>
+                    <Button fx:id="btnStrategyParams" text="Strategy Params"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnOpenDetail" text="Open Detail"/>
+                </HBox>
+
+                <VBox.vgrow>ALWAYS</VBox.vgrow>
+            </VBox>
+
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="16" BorderPane.alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="8" right="12" bottom="8" left="12"/>
+            </padding>
+
+            <Label fx:id="lblRunnerStatus" text="Runner: CONNECTED"/>
+            <Label fx:id="lblActiveBots" text="Active bots: 0"/>
+            <Label fx:id="lblErrors" text="Errors: 0"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblBuild" text="v0.x"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

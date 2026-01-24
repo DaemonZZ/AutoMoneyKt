@@ -6,6 +6,7 @@ import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
 import com.daemonz.core.risk.RiskConfig
 import com.daemonz.core.strategy.StrategySpec
+import com.daemonz.runtime.Mode
 import com.daemonz.runtime.scanner.*
 import com.daemonz.runtime.status.AppStatus
 import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Compatibility
@@ -15,7 +16,6 @@ import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7CompatibilityParams
 import com.daemonz.strategies.registry.StrategyRegistry
 import com.daemonz.strategies.registry.StrategySelection
 import com.daemonz.strategies.registry.newSelectionAny
-import com.daemonz.utils.Mode
 import com.daemonz.utils.SystemConfig
 import javafx.beans.property.BooleanProperty
 import javafx.beans.property.SimpleBooleanProperty

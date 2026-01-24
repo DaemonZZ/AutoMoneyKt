@@ -6,7 +6,7 @@ import com.daemonz.base.BaseController
 import com.daemonz.controller.dialog.AuthenticationDialogController
 import com.daemonz.models.AccountSnapshot
 import com.daemonz.runtime.AccountService
-import com.daemonz.utils.Mode
+import com.daemonz.runtime.Mode
 import com.daemonz.utils.SystemConfig
 import javafx.collections.FXCollections
 import javafx.fxml.FXML

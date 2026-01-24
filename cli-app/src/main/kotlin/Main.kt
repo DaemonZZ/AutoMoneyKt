@@ -1,14 +1,6 @@
 package com.daemonz
 
 import com.daemonz.core.market.Candle
-import com.daemonz.runtime.BotRunner
-import com.daemonz.runtime.BotSpec
-import com.daemonz.runtime.EventSink
-import com.daemonz.runtime.RunMode
-import com.daemonz.runtime.RuntimeEvent
-import com.daemonz.core.strategy.demo.DemoParams
-import com.daemonz.core.strategy.demo.EmaAtrDemoStrategy
-import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or

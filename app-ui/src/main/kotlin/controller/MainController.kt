@@ -1,8 +1,9 @@
 package com.daemonz.controller
 
+import com.daemonz.base.BaseController
+import com.daemonz.utils.FxLoader
 import javafx.fxml.FXML
-import javafx.fxml.FXMLLoader
-import javafx.scene.Parent
+import javafx.scene.Node
 import javafx.scene.control.ToggleButton
 import javafx.scene.control.ToggleGroup
 import javafx.scene.layout.StackPane
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class MainController {
 
+    @FXML
     lateinit var navBar: VBox
     @FXML
     lateinit var contentHost: StackPane
@@ -27,25 +29,33 @@ class MainController {
     @FXML
     lateinit var navGroup: ToggleGroup
 
-    private val viewCache = ConcurrentHashMap<String, Parent>()
+    private data class ViewEntry(val controller: BaseController?, val node: Node)
+
+    private val viewCache = ConcurrentHashMap<String, ViewEntry>()
 
     @FXML
     fun initialize() {
-        // 1) Wire navigation
-        homeBtn.setOnAction { show("HomeView.fxml") }
-        analyzeBtn.setOnAction { show("AnalyzeView.fxml") }
-        botseBtn.setOnAction { show("BotsView.fxml") }
-        logsBtn.setOnAction { show("LogsView.fxml") }
+        // Ensure toggle group (if not set in FXML)
+        homeBtn.toggleGroup = navGroup
+        analyzeBtn.toggleGroup = navGroup
+        botseBtn.toggleGroup = navGroup
+        logsBtn.toggleGroup = navGroup
 
-        // 2) Default view on startup
+        homeBtn.setOnAction { show("/HomeView.fxml") }
+        analyzeBtn.setOnAction { show("/AnalyzeView.fxml") }
+        botseBtn.setOnAction { show("/BotsView.fxml") }
+        logsBtn.setOnAction { show("/LogsView.fxml") }
+
         homeBtn.isSelected = true
-        show("HomeView.fxml")
+        show("/HomeView.fxml")
     }
 
-    private fun show(fxml: String) {
-        val root = viewCache.computeIfAbsent(fxml) {
-            FXMLLoader(javaClass.getResource("/$fxml")).load()
+    private fun show(fxmlPath: String) {
+        val entry = viewCache.computeIfAbsent(fxmlPath) { path ->
+            val url = requireNotNull(javaClass.getResource(path)) { "FXML not found: $path" }
+            val (controller, root) = FxLoader.load<BaseController>(url)
+            ViewEntry(controller, root as Node)
         }
-        contentHost.children.setAll(root)
+        contentHost.children.setAll(entry.node)
     }
 }
