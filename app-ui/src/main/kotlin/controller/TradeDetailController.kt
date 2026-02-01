@@ -52,7 +52,7 @@ class TradeDetailController : BaseController() {
         /* ===== Summary ===== */
         titleLabel.text = "Trade Detail – ${scan.symbol}"
         symbolLabel.text = scan.symbol
-        strategyLabel.text = "EMA Pullback v7" // hoặc lấy từ ScanResult nếu có
+        strategyLabel.text = "EMA Pullback v7"
         verdictLabel.text = scan.verdict.name
         scoreLabel.text = scan.score.toString()
 
@@ -78,8 +78,8 @@ class TradeDetailController : BaseController() {
         }
 
         equityXAxis.label = "Bar"
-        (equityXAxis as NumberAxis).isForceZeroInRange = false
-        (equityYAxis as NumberAxis).isForceZeroInRange = false
+        equityXAxis.isForceZeroInRange = false
+        equityYAxis.isForceZeroInRange = false
 
         equityChart.data.add(series)
     }

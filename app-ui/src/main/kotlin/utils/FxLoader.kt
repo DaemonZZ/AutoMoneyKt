@@ -17,7 +17,6 @@ object FxLoader : KoinComponent {
 
         loader.setControllerFactory { clazz ->
             try {
-                // ✅ Koin expects KClass
                 getKoin().get(clazz.kotlin)
             } catch (_: Exception) {
                 // fallback: no-arg constructor

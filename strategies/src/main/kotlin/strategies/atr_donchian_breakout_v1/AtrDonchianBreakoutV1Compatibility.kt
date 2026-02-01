@@ -44,16 +44,52 @@ class AtrDonchianBreakoutV1Compatibility :
 
         val finalScore = score.coerceIn(0.0, 100.0).roundToInt()
 
-        // 3) needBacktest heuristic
-        // - nếu fail các gate quan trọng -> khỏi backtest (thường fake breakout/chop)
-        // - nếu không fail hard, score trung bình -> nên backtest
-        val hardFail =
-            (stats.atrPct < params.minAtrPct) ||
-                    (stats.atrPct > params.maxAtrPct) ||
-                    (stats.chopScore > params.maxChopScore) ||
-                    (stats.trendStrength < params.minTrendStrength)
 
-        val needBacktest = !hardFail && finalScore in 40..90
+        val hardFail = (stats.atrPct < params.minAtrPct) || (stats.atrPct > params.maxAtrPct)
+
+        val needBacktest = !hardFail && finalScore >= 40
+        val failAtrLow = stats.atrPct < params.minAtrPct
+        val failAtrHigh = stats.atrPct > params.maxAtrPct
+        val failTrend = stats.trendStrength < params.minTrendStrength
+        val failChop = stats.chopScore > params.maxChopScore
+        val failLiq = stats.liquidityScore < params.minLiquidityScore
+
+        println(
+            """
+    ─────────────────────────────────────────
+    [ATR DONCHIAN COMPAT]
+    Symbol      : previous log
+    ATR%        : ${stats.atrPct}   (min=${params.minAtrPct}, max=${params.maxAtrPct})
+    Trend       : ${stats.trendStrength} (min=${params.minTrendStrength})
+    Chop        : ${stats.chopScore} (max=${params.maxChopScore})
+    Liquidity   : ${stats.liquidityScore} (min=${params.minLiquidityScore})
+
+    Fail Gates:
+      ATR low   : $failAtrLow
+      ATR high  : $failAtrHigh
+      Trend     : $failTrend
+      Chop      : $failChop
+      Liquidity : $failLiq
+
+    Score Calc:
+      Base      : 100
+      ATR pen   : ${
+                (if (failAtrLow) -35 else 0) + (if (failAtrHigh) -30 else 0)
+            }
+      Chop pen  : ${-(stats.chopScore * 25)}
+      Trend bon : ${stats.trendStrength * 20}
+      Liq bon   : ${stats.liquidityScore * 10}
+      ATR sweet : ${
+                if (stats.atrPct in (params.minAtrPct + 0.2)..(params.maxAtrPct - 0.5)) 15 else 0
+            }
+
+    FinalScore  : $finalScore
+    HardFail    : $hardFail
+    NeedBacktest: $needBacktest
+    Reasons     : $reasons
+    ─────────────────────────────────────────
+    """.trimIndent()
+        )
 
         return CompatibilityScore(
             score = finalScore,

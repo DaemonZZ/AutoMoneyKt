@@ -4,7 +4,6 @@ import com.daemonz.adapters.exchange.OrderAck
 
 object OrderJson {
     fun toAck(json: String): OrderAck {
-        // Tối giản: chỉ cố lấy orderId nếu có
         val id = extractNumber(json, "\"orderId\"") ?: "UNKNOWN"
         return OrderAck(orderId = id, accepted = true)
     }

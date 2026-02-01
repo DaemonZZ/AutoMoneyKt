@@ -4,13 +4,12 @@ import com.daemonz.core.market.Candle
 
 object KlinesJson {
     fun parse(json: String): List<Candle> {
-        // Parser tối giản dựa trên split: đủ cho demo; production nên dùng JSON lib.
         // json: [[openTime,"open","high","low","close","volume",...],...]
         val trimmed = json.trim()
         if (trimmed.length < 5) return emptyList()
 
         val out = mutableListOf<Candle>()
-        // Tách từng kline block bằng "],[" (thô nhưng chạy)
+        // Tách từng kline block bằng "],["
         val inner = trimmed.removePrefix("[").removeSuffix("]")
         if (inner.isBlank()) return emptyList()
 

@@ -2,8 +2,19 @@ package com.daemonz.runtime.scanner
 
 data class StepBConfig(
     val maxConcurrency: Int = 6,
-    val applyFilters: Boolean = true,     // giống Step A
-    val compatThreshold: Int = 60,        // >= thì TRADE
-    val weightMarket: Double = 0.40,      // trọng số Step A confidence
-    val weightCompat: Double = 0.60       // trọng số Step B compatibility
+    val applyFilters: Boolean = true,
+
+    // score blending
+    val weightMarket: Double = 0.4,
+    val weightCompat: Double = 0.6,
+
+    // compat thresholds (labeling)
+    val compatTradeThreshold: Int = 70,
+    val compatWatchThreshold: Int = 50,
+
+    // backtest gate
+    val minFinalScoreForBacktest: Int = 40,
+
+    // debug
+    val debugLogs: Boolean = true
 )

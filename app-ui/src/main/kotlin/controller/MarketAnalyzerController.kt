@@ -12,8 +12,10 @@ import com.daemonz.runtime.scanner.*
 import com.daemonz.runtime.status.AppStatus
 import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Compatibility
 import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1CompatibilityParams
+import com.daemonz.strategies.atr_donchian_breakout_v1.AtrDonchianBreakoutV1Params
 import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Compatibility
 import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7CompatibilityParams
+import com.daemonz.strategies.ema_pullback_v7.EmaPullbackV7Params
 import com.daemonz.strategies.registry.StrategyRegistry
 import com.daemonz.strategies.registry.StrategySelection
 import com.daemonz.strategies.registry.newSelectionAny
@@ -523,7 +525,15 @@ class MarketAnalyzerController : BaseController() {
                     }
 
                     if (useStepB) {
-                        runStepB(scanner, request, onProgressCb, onVolCb)
+                        runStepB(
+                            scanner = scanner,
+                            request = request,
+                            strategy = strategy,
+                            params = params,
+                            onProgress = onProgressCb,
+                            onVolatility = onVolCb,
+                            onDetail = { symbol, bt -> backtestCache[keyForSymbol(symbol)] = bt }
+                        )
                     } else {
                         if (isAuto) {
                             val autoCfg = AutoPickConfig(
@@ -613,38 +623,63 @@ class MarketAnalyzerController : BaseController() {
     private suspend fun runStepB(
         scanner: MarketScannerService,
         request: ScanRequest,
+        strategy: com.daemonz.core.strategy.Strategy<Any>,
+        params: Any,
         onProgress: suspend (done: Int, total: Int, symbol: String) -> Unit,
-        onVolatility: suspend (symbol: String, volPct: Double) -> Unit
+        onVolatility: suspend (symbol: String, volPct: Double) -> Unit,
+        onDetail: suspend (symbol: String, backtest: BacktestResult) -> Unit = { _, _ -> }
     ): List<ScanResult> {
+
         val spec = strategyCombo.value ?: StrategyRegistry.all.first()
 
         val cfg = StepBConfig(
             applyFilters = applyFiltersCheck.isSelected,
             maxConcurrency = 6,
             weightMarket = 0.5,
-            weightCompat = 0.5
+            weightCompat = 0.5,
+            debugLogs = true
         )
 
         return when (spec.id.value) {
-            "atr_donchian_breakout_v1" -> scanner.analyzeStepB(
-                req = request,
-                params = AtrDonchianBreakoutV1CompatibilityParams(),
-                compat = AtrDonchianBreakoutV1Compatibility(),
-                config = cfg,
-                onProgress = onProgress,
-                onVolatility = onVolatility
-            )
 
-            "ema_pullback_v7" -> scanner.analyzeStepB(
-                req = request,
-                params = EmaPullbackV7CompatibilityParams(),
-                compat = EmaPullbackV7Compatibility(),
-                config = cfg,
-                onProgress = onProgress,
-                onVolatility = onVolatility
-            )
+            "atr_donchian_breakout_v1" -> {
+                @Suppress("UNCHECKED_CAST")
+                val stg = strategy as com.daemonz.core.strategy.Strategy<AtrDonchianBreakoutV1Params>
+                val sp = params as AtrDonchianBreakoutV1Params
+
+                scanner.analyzeStepB(
+                    req = request,
+                    strategy = stg,
+                    strategyParams = sp,
+                    compat = AtrDonchianBreakoutV1Compatibility(),
+                    compatParams = AtrDonchianBreakoutV1CompatibilityParams(),
+                    config = cfg,
+                    onProgress = onProgress,
+                    onVolatility = onVolatility,
+                    onDetail = onDetail
+                )
+            }
+
+            "ema_pullback_v7" -> {
+                @Suppress("UNCHECKED_CAST")
+                val stg = strategy as com.daemonz.core.strategy.Strategy<EmaPullbackV7Params>
+                val sp = params as EmaPullbackV7Params
+
+                scanner.analyzeStepB(
+                    req = request,
+                    strategy = stg,
+                    strategyParams = sp,
+                    compat = EmaPullbackV7Compatibility(),
+                    compatParams = EmaPullbackV7CompatibilityParams(),
+                    config = cfg,
+                    onProgress = onProgress,
+                    onVolatility = onVolatility,
+                    onDetail = onDetail
+                )
+            }
 
             else -> emptyList()
         }
     }
+
 }

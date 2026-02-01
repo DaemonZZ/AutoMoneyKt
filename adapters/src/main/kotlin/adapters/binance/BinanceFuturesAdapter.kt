@@ -54,7 +54,6 @@ class BinanceFuturesAdapter(
                 val quoteVol = o.optString("quoteVolume", "0").toDoubleOrNull() ?: 0.0
                 val chgPct = o.optString("priceChangePercent", "0").toDoubleOrNull() ?: 0.0
 
-                // USDT-M futures tickers vẫn trả đủ, bạn lọc symbol ở runtime
                 out.add(Ticker24h(symbol, quoteVol, chgPct))
             }
             return out
@@ -135,7 +134,6 @@ class BinanceFuturesAdapter(
         symbol: String,
         limit: Int
     ): List<Candle> {
-        // Futures klines endpoint (thường là /fapi/v1/klines)
         val url = (cfg.baseUrl + "/fapi/v1/klines").toHttpUrl().newBuilder()
             .addQueryParameter("symbol", symbol)
             .addQueryParameter("interval", "1m")
@@ -148,7 +146,6 @@ class BinanceFuturesAdapter(
             val body = resp.body?.string() ?: "[]"
 
             // Body là mảng mảng: [ [openTime, open, high, low, close, volume, closeTime, ...], ... ]
-            // Parse nhanh gọn không dùng serializer để tránh setup nặng: làm thủ công đơn giản.
             return KlinesJson.parse(body)
         }
     }
@@ -159,7 +156,6 @@ class BinanceFuturesAdapter(
     }
 
     override fun placeOrder(req: PlaceOrderRequest): OrderAck {
-        // order endpoint (thường: /fapi/v1/order)
         val params = linkedMapOf(
             "symbol" to req.symbol,
             "side" to req.side.name,

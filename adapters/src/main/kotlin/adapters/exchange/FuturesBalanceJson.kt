@@ -25,7 +25,6 @@ object FuturesBalanceJson {
         return obj.substring(colon + 1, end).trim().trim('"')
     }
 
-    // tách các object top-level trong array (thô nhưng chạy)
     private fun splitObjects(json: String): List<String> {
         val s = json.trim()
         if (!s.startsWith("[")) return emptyList()

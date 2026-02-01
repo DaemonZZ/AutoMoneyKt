@@ -7,7 +7,11 @@ import com.daemonz.runtime.bot.*
 import javafx.collections.FXCollections
 import javafx.collections.transformation.FilteredList
 import javafx.fxml.FXML
+import javafx.fxml.FXMLLoader
+import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.stage.Modality
+import javafx.stage.Stage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.javafx.JavaFx
@@ -20,6 +24,8 @@ class BotsController(
     // inject bằng DI hoặc ServiceLocator
     private val registry: BotFleetRegistry
 ) : BaseController() {
+
+    lateinit var btnDeployBot: Button
 
     // ====== FXML ids (the same as your screen) ======
     @FXML
@@ -195,6 +201,7 @@ class BotsController(
             val id = botsTable.selectionModel.selectedItem?.botId ?: return@setOnAction
             uiScope.launch { registry.get(id)?.stop() }
         }
+        btnDeployBot.setOnAction { openDeployWizard() }
     }
 
     private fun bindFleet() {
@@ -366,5 +373,29 @@ class BotsController(
         val m = (sec % 3600) / 60
         val s = sec % 60
         return "%02d:%02d:%02d".format(h, m, s)
+    }
+    private fun openDeployWizard() {
+        val loader = FXMLLoader(javaClass.getResource("/deploy_bot_wizard.fxml"))
+        val root = loader.load<javafx.scene.Parent>()
+        val ctrl = loader.getController<DeployBotWizardController>()
+
+        val dialog = Stage().apply {
+            initModality(Modality.APPLICATION_MODAL)
+            title = "Deploy Bot"
+            scene = Scene(root).apply {
+                // nếu có css global thì add ở đây
+                // stylesheets.add(javaClass.getResource("/com/automoney/ui/app.css")!!.toExternalForm())
+            }
+            isResizable = false
+        }
+
+        ctrl.onCancel = { dialog.close() }
+        ctrl.onCreate = { cfg ->
+            // TODO: add bot vào bảng Fleet + persist
+            // addBotToFleet(cfg)
+            dialog.close()
+        }
+
+        dialog.showAndWait()
     }
 }

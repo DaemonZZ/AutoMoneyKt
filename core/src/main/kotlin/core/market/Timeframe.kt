@@ -1,8 +1,8 @@
 package com.daemonz.core.market
 
 enum class Timeframe(
-    val code: String,     // dùng cho exchange (Binance)
-    val label: String     // dùng cho UI
+    val code: String,
+    val label: String
 ) {
     M1("1m", "1m"),
     M5("5m", "5m"),
