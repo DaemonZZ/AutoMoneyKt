@@ -22,17 +22,40 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class HomeController : BaseController() {
+    @FXML
     lateinit var lbMarginMode: Label
+
+    @FXML
     lateinit var tfAvailable: Label
+
+    @FXML
     lateinit var lbMargin: Label
+
+    @FXML
     lateinit var lbDeposit: Label
+
+    @FXML
     lateinit var lbWithdraw: Label
+
+    @FXML
     lateinit var lbTrade: Label
+
+    @FXML
     lateinit var modeChoice: ChoiceBox<Mode>
+
+    @FXML
     lateinit var lbStatus: Label
+
+    @FXML
     lateinit var pnlLabel: Label
+
+    @FXML
     lateinit var balanceLb: Label
+
+    @FXML
     lateinit var testBtn: Button
+
+    @FXML
     lateinit var authBtn: Button
 
     @FXML

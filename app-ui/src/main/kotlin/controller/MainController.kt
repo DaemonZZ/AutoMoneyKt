@@ -1,6 +1,7 @@
 package com.daemonz.controller
 
 import com.daemonz.base.BaseController
+import com.daemonz.base.ViewLifecycle
 import com.daemonz.utils.FxLoader
 import javafx.fxml.FXML
 import javafx.scene.Node
@@ -53,9 +54,20 @@ class MainController {
     private fun show(fxmlPath: String) {
         val entry = viewCache.computeIfAbsent(fxmlPath) { path ->
             val url = requireNotNull(javaClass.getResource(path)) { "FXML not found: $path" }
-            val (controller, root) = FxLoader.load<BaseController>(url)
-            ViewEntry(controller, root as Node)
+            val loaded = FxLoader.load(url)
+            ViewEntry(loaded.controller, loaded.root as Node)
         }
+
+        // call lifecycle
+        val current = contentHost.children.firstOrNull()
+        val currentCtrl = current?.properties?.get("controller") as? ViewLifecycle
+        currentCtrl?.onHide()
+
+        // attach controller to node for later lookup
+        entry.node.properties["controller"] = entry.controller
+
         contentHost.children.setAll(entry.node)
+
+        (entry.controller as? ViewLifecycle)?.onShow()
     }
 }

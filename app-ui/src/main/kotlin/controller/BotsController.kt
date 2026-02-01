@@ -24,63 +24,83 @@ class BotsController(
     // ====== FXML ids (the same as your screen) ======
     @FXML
     private lateinit var searchField: TextField
+
     @FXML
     private lateinit var modeFilterCombo: ComboBox<String>
+
     @FXML
     private lateinit var statusFilterCombo: ComboBox<String>
 
     @FXML
     private lateinit var botsTable: TableView<BotRow>
+
     @FXML
     private lateinit var colBotName: TableColumn<BotRow, String>
+
     @FXML
     private lateinit var colSymbol: TableColumn<BotRow, String>
+
     @FXML
     private lateinit var colStatus: TableColumn<BotRow, String>
+
     @FXML
     private lateinit var colMode: TableColumn<BotRow, String>
 
     @FXML
     private lateinit var lblFleetCount: Label
+
     @FXML
     private lateinit var lblActiveBots: Label
 
     // detail
     @FXML
     private lateinit var lblBotTitle: Label
+
     @FXML
     private lateinit var lblBotSubtitle: Label
+
     @FXML
     private lateinit var lblBotStatusBadge: Label
 
     @FXML
     private lateinit var lblTotalPnl: Label
+
     @FXML
     private lateinit var lblPnlHint: Label
+
     @FXML
     private lateinit var lblWinRate: Label
+
     @FXML
     private lateinit var lblTrades: Label
+
     @FXML
     private lateinit var lblExposure: Label
+
     @FXML
     private lateinit var lblPositions: Label
+
     @FXML
     private lateinit var lblHealth: Label
+
     @FXML
     private lateinit var lblLatency: Label
 
     @FXML
     private lateinit var chkAutoScroll: CheckBox
+
     @FXML
     private lateinit var logArea: TextArea
 
     @FXML
     private lateinit var btnStart: Button
+
     @FXML
     private lateinit var btnPause: Button
+
     @FXML
     private lateinit var btnStop: Button
+
     @FXML
     private lateinit var btnClearLog: Button
 

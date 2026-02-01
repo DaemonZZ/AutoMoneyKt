@@ -2,6 +2,7 @@ package com.daemonz.controller
 
 import com.daemonz.adapters.binance.BinanceConfig
 import com.daemonz.adapters.binance.BinanceFuturesAdapter
+import com.daemonz.base.BaseController
 import com.daemonz.core.engine.BacktestResult
 import com.daemonz.core.market.Timeframe
 import com.daemonz.core.risk.RiskConfig
@@ -44,7 +45,7 @@ private data class AnalyzeCacheKey(
     val startingEquity: Double
 )
 
-class MarketAnalyzerController {
+class MarketAnalyzerController : BaseController() {
 
     /* =========================
        UI – Right filters
@@ -106,7 +107,6 @@ class MarketAnalyzerController {
     /* =========================
        Runtime
        ========================= */
-    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.JavaFx)
     private var runningJob: Job? = null
 
     private val allSymbols = FXCollections.observableArrayList<String>()

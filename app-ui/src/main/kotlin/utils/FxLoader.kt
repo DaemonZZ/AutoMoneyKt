@@ -1,28 +1,32 @@
 package com.daemonz.utils
 
+import com.daemonz.base.BaseController
 import javafx.fxml.FXMLLoader
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
 import java.net.URL
-import javax.swing.UIManager.get
 
 object FxLoader : KoinComponent {
 
-    fun <T> load(url: URL): Pair<T, Any> {
+    data class Loaded(
+        val controller: BaseController?,
+        val root: Any
+    )
+
+    fun load(url: URL): Loaded {
         val loader = FXMLLoader(url)
 
         loader.setControllerFactory { clazz ->
-            // Nếu class được Koin quản lý -> Koin tạo
-            // Nếu không -> fallback no-arg constructor
             try {
-                get(clazz.kotlin)
+                // ✅ Koin expects KClass
+                getKoin().get(clazz.kotlin)
             } catch (_: Exception) {
+                // fallback: no-arg constructor
                 clazz.getDeclaredConstructor().newInstance()
             }
         }
 
         val root = loader.load<Any>()
-        @Suppress("UNCHECKED_CAST")
-        return loader.getController<T>() to root
+        val controller = loader.getController<Any>() as? BaseController
+        return Loaded(controller, root)
     }
 }
