@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="560" prefWidth="760" xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.daemonz.controller.DeployBotWizardController">
+
+    <top>
+        <HBox spacing="10"
+              style="-fx-padding:14; -fx-background-color:#0d1a21; -fx-border-color:#132a34; -fx-border-width:0 0 1 0;">
+            <Label style="-fx-font-size:18; -fx-font-weight:700; -fx-text-fill:#d7e3ea;" text="Deploy Bot"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblStep"
+                   style="-fx-background-color:#0ea5e9; -fx-text-fill:#031018; -fx-font-weight:700; -fx-padding:6 10; -fx-background-radius:999;"
+                   text="STEP 1/3"/>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="10" style="-fx-padding:14; -fx-background-color:#0b1318;">
+            <HBox spacing="18">
+                <Label fx:id="stepIdentity" styleClass="step" text="Identity"/>
+                <Label fx:id="stepStrategy" styleClass="step" text="Strategy"/>
+                <Label fx:id="stepRisk" styleClass="step" text="Risk Management"/>
+            </HBox>
+
+            <Separator/>
+
+            <StackPane VBox.vgrow="ALWAYS">
+
+                <!-- STEP 1 -->
+                <VBox fx:id="paneStep1" spacing="14">
+                    <GridPane hgap="14" vgap="14">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+
+                        <VBox spacing="8" GridPane.columnIndex="0">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Bot Name"/>
+                            <TextField fx:id="txtBotName" promptText="ScalpMaster-01"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Symbol"/>
+                            <ComboBox fx:id="cboSymbol" editable="true" promptText="BTCUSDT"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Mode"/>
+                            <HBox spacing="10">
+                                <ToggleButton fx:id="tbLive" text="LIVE"/>
+                                <ToggleButton fx:id="tbSandBox" text="SandBox"/>
+                            </HBox>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Exchange"/>
+                            <ComboBox fx:id="cboExchange" promptText="Binance Futures"/>
+                        </VBox>
+                        <rowConstraints>
+                            <RowConstraints/>
+                            <RowConstraints/>
+                        </rowConstraints>
+                    </GridPane>
+
+                    <VBox spacing="8">
+                        <Label style="-fx-text-fill:#7f9aa8;" text="Notes"/>
+                        <TextArea fx:id="txtNotes" prefRowCount="3" promptText="Add notes about this deployment..."/>
+                    </VBox>
+
+                    <VBox fx:id="liveWarningBox" managed="false" spacing="6"
+                          style="-fx-padding:12; -fx-background-radius:12; -fx-border-radius:12; -fx-background-color: rgba(14,165,233,0.10); -fx-border-color: rgba(14,165,233,0.40);"
+                          visible="false">
+                        <Label style="-fx-font-weight:800; -fx-text-fill:#d7e3ea;" text="LIVE mode active"/>
+                        <Label style="-fx-text-fill:#9fb7c4;"
+                               text="LIVE mode will place real orders. Make sure API keys and risk limits are set before proceeding."
+                               wrapText="true"/>
+                    </VBox>
+                </VBox>
+
+                <!-- STEP 2 -->
+                <VBox fx:id="paneStep2" managed="false" spacing="14" visible="false">
+                    <GridPane hgap="14" vgap="14">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+
+                        <VBox spacing="8" GridPane.columnIndex="0">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Strategy"/>
+                            <ComboBox fx:id="cboStrategy"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Preset"/>
+                            <ComboBox fx:id="cboPreset"/>
+                        </VBox>
+                        <rowConstraints>
+                            <RowConstraints/>
+                        </rowConstraints>
+                    </GridPane>
+
+                    <HBox alignment="CENTER_LEFT" spacing="18">
+                        <CheckBox fx:id="chkLoadDefaults" selected="true" text="Load preset defaults"/>
+                        <CheckBox fx:id="chkAllowShort" selected="true" text="Allow SHORT trades"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnStrategyParams" text="Strategy Params..."/>
+                    </HBox>
+
+                    <VBox spacing="8">
+                        <Label style="-fx-text-fill:#7f9aa8;" text="LOGIC SUMMARY"/>
+                        <TextArea fx:id="txtLogicSummary" editable="false" prefRowCount="7"/>
+                    </VBox>
+                </VBox>
+
+                <!-- STEP 3 -->
+                <VBox fx:id="paneStep3" managed="false" spacing="14" visible="false">
+                    <GridPane hgap="14" vgap="14">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+
+                        <VBox spacing="8" GridPane.columnIndex="0">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Risk Profile"/>
+                            <ComboBox fx:id="cboRiskProfile"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Max Positions"/>
+                            <Spinner fx:id="spMaxPos"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Risk Per Trade (%)"/>
+                            <TextField fx:id="txtRiskPerTrade" promptText="0.5"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Label style="-fx-text-fill:#7f9aa8;" text="Daily Loss Limit (%)"/>
+                            <TextField fx:id="txtDailyLoss" promptText="2.0"/>
+                        </VBox>
+                        <rowConstraints>
+                            <RowConstraints/>
+                            <RowConstraints/>
+                        </rowConstraints>
+                    </GridPane>
+
+                    <VBox spacing="10">
+                        <CheckBox fx:id="chkPauseOnError" selected="true"
+                                  text="Pause bot automatically on execution error"/>
+                        <CheckBox fx:id="chkPauseOnDisconnect" selected="true" text="Pause on exchange disconnect"/>
+                    </VBox>
+
+                    <VBox spacing="8">
+                        <Label style="-fx-text-fill:#7f9aa8;" text="DEPLOYMENT SUMMARY"/>
+                        <TextArea fx:id="txtDeploySummary" editable="false" prefRowCount="6"/>
+                        <Label style="-fx-text-fill:#7f9aa8;"
+                               text="Bot will be created in STOPPED state (it will not start automatically)."/>
+                    </VBox>
+                </VBox>
+
+            </StackPane>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="10"
+              style="-fx-padding:14; -fx-background-color:#0d1a21; -fx-border-color:#132a34; -fx-border-width:1 0 0 0;">
+            <Label fx:id="lblError" style="-fx-text-fill:#fb7185; -fx-font-weight:700;" text=""/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnCancel" text="Cancel"/>
+            <Button fx:id="btnBack" disable="true" text="Back"/>
+            <Button fx:id="btnNext" text="Next Step →"/>
+            <Button fx:id="btnCreate" managed="false" text="Create Bot" visible="false"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

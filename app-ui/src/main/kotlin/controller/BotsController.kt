@@ -391,8 +391,17 @@ class BotsController(
 
         ctrl.onCancel = { dialog.close() }
         ctrl.onCreate = { cfg ->
-            // TODO: add bot vào bảng Fleet + persist
-            // addBotToFleet(cfg)
+            val row = BotRow(
+                botId = cfg.botId,
+                name = cfg.name,
+                symbol = cfg.symbol,
+                mode = cfg.mode.name,
+                status = "STOPPED"
+            )
+
+            rows.add(row)
+            botsTable.selectionModel.select(row)
+
             dialog.close()
         }
 
