@@ -58,8 +58,8 @@ class HomeController : BaseController() {
     @FXML
     lateinit var authBtn: Button
 
-    @FXML
-    fun initialize() {
+
+    override fun initUi() {
         authBtn.setOnAction {
             val rs = showAuthDialog()
             if (rs) refreshData()
@@ -80,6 +80,10 @@ class HomeController : BaseController() {
             println("Mode selected: $newValue")
             SystemConfig.mode = newValue
         }
+    }
+
+    override fun fetchData() {
+
     }
 
     private fun refreshData() {
@@ -122,5 +126,8 @@ class HomeController : BaseController() {
         dialog.dialogPane.content = content
         dialog.dialogPane.buttonTypes.clear()
         return dialog.showAndWait().orElse(false)
+    }
+
+    override fun setupObserver() {
     }
 }

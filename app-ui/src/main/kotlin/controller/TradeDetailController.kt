@@ -83,4 +83,14 @@ class TradeDetailController : BaseController() {
 
         equityChart.data.add(series)
     }
+
+    override fun fetchData() {
+
+    }
+
+    override fun initUi() {
+    }
+
+    override fun setupObserver() {
+    }
 }

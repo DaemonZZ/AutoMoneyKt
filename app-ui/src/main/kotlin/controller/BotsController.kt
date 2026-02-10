@@ -4,6 +4,7 @@ import com.daemonz.base.BaseController
 import com.daemonz.models.BotRow
 import com.daemonz.runtime.Mode
 import com.daemonz.runtime.bot.*
+import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.collections.transformation.FilteredList
 import javafx.fxml.FXML
@@ -21,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToInt
 
 class BotsController(
-    // inject bằng DI hoặc ServiceLocator
     private val registry: BotFleetRegistry
 ) : BaseController() {
 
@@ -126,14 +126,16 @@ class BotsController(
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss")
     private val zone = ZoneId.systemDefault()
 
-    @FXML
-    fun initialize() {
+    override fun initUi() {
         setupTable()
         setupFilters()
         setupActions()
 
         // bind fleet (list of bots)
         bindFleet()
+    }
+
+    override fun fetchData() {
     }
 
     private fun setupTable() {
@@ -218,7 +220,7 @@ class BotsController(
                             name = st.name,
                             symbol = st.symbol,
                             mode = st.mode.label,
-                            status = st.status.name
+                            status = st.status
                         ).also {
                             it.statusEnumProperty.set(st.status)
                         }
@@ -396,7 +398,7 @@ class BotsController(
                 name = cfg.name,
                 symbol = cfg.symbol,
                 mode = cfg.mode.name,
-                status = "STOPPED"
+                status = BotStatus.STOPPED
             )
 
             rows.add(row)
@@ -406,5 +408,8 @@ class BotsController(
         }
 
         dialog.showAndWait()
+    }
+
+    override fun setupObserver() {
     }
 }

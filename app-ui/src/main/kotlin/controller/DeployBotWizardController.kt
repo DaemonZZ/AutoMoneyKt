@@ -1,35 +1,18 @@
 package com.daemonz.controller
 
+import com.daemonz.base.BaseController
 import com.daemonz.core.strategy.StrategySpec
+import com.daemonz.models.BotConfig
 import com.daemonz.runtime.Mode
 import com.daemonz.strategies.registry.StrategyRegistry
+import com.daemonz.viewmodel.DeployBotWizardViewModel
 import javafx.fxml.FXML
 import javafx.scene.control.*
 import javafx.scene.layout.VBox
-import java.util.UUID
+import kotlinx.coroutines.launch
+import org.koin.core.component.inject
 
-
-data class BotConfig(
-    val botId: String = UUID.randomUUID().toString(),
-    val name: String,
-    val symbol: String,
-    val mode: Mode,
-    val exchange: String,
-    val strategy: String,
-    val preset: String,
-    val loadDefaults: Boolean,
-    val allowShort: Boolean,
-    val riskProfile: String,
-    val maxPositions: Int,
-    val riskPerTradePct: Double,
-    val dailyLossLimitPct: Double,
-    val pauseOnError: Boolean,
-    val pauseOnDisconnect: Boolean,
-    val notes: String?
-)
-
-class DeployBotWizardController {
-
+class DeployBotWizardController : BaseController() {
     // top
     @FXML
     lateinit var lblStep: Label
@@ -111,13 +94,14 @@ class DeployBotWizardController {
 
     private var step = 0
     private val modeGroup = ToggleGroup()
+    private val botNameRegex = Regex("^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$")
+    private val symbolRegex = Regex("^[A-Z0-9]{6,16}$")
+
+    private val viewModel: DeployBotWizardViewModel by inject()
 
     @FXML
-    fun initialize() {
+    override fun initUi() {
         // defaults
-        cboSymbol.items.setAll("BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT")
-        cboSymbol.editor.text = "BTCUSDT"
-
         cboExchange.items.setAll("Binance Futures")
         cboExchange.selectionModel.selectFirst()
 
@@ -141,19 +125,19 @@ class DeployBotWizardController {
 
         modeGroup.selectedToggleProperty().addListener { _, _, _ ->
             val live = currentMode() == Mode.LIVE
-            liveWarningBox.isVisible = live
-            liveWarningBox.isManaged = live
+            setVisibleManaged(liveWarningBox, live)
             updateSummaries()
         }
 
-        cboStrategy.valueProperty().addListener { _, _, _ -> updateSummaries() }
-        cboPreset.valueProperty().addListener { _, _, _ -> updateSummaries() }
-        chkAllowShort.selectedProperty().addListener { _, _, _ -> updateSummaries() }
-        chkLoadDefaults.selectedProperty().addListener { _, _, _ -> updateSummaries() }
-        spMaxPos.valueProperty().addListener { _, _, _ -> updateSummaries() }
-        txtRiskPerTrade.textProperty().addListener { _, _, _ -> updateSummaries() }
-        txtDailyLoss.textProperty().addListener { _, _, _ -> updateSummaries() }
-        cboRiskProfile.valueProperty().addListener { _, _, _ -> updateSummaries() }
+        val updateSummary = { _: Any?, _: Any?, _: Any? -> updateSummaries() }
+        cboStrategy.valueProperty().addListener(updateSummary)
+        cboPreset.valueProperty().addListener(updateSummary)
+        chkAllowShort.selectedProperty().addListener(updateSummary)
+        chkLoadDefaults.selectedProperty().addListener(updateSummary)
+        spMaxPos.valueProperty().addListener(updateSummary)
+        txtRiskPerTrade.textProperty().addListener(updateSummary)
+        txtDailyLoss.textProperty().addListener(updateSummary)
+        cboRiskProfile.valueProperty().addListener(updateSummary)
 
         btnStrategyParams.setOnAction {
             Alert(Alert.AlertType.INFORMATION).apply {
@@ -170,6 +154,10 @@ class DeployBotWizardController {
 
         render()
         updateSummaries()
+    }
+
+    override fun fetchData() {
+        viewModel.getListSymbols()
     }
 
     private fun currentMode(): Mode = when (modeGroup.selectedToggle) {
@@ -198,13 +186,13 @@ class DeployBotWizardController {
     }
 
     private fun render() {
-        paneStep1.isVisible = step == 0; paneStep1.isManaged = step == 0
-        paneStep2.isVisible = step == 1; paneStep2.isManaged = step == 1
-        paneStep3.isVisible = step == 2; paneStep3.isManaged = step == 2
+        setVisibleManaged(paneStep1, step == 0)
+        setVisibleManaged(paneStep2, step == 1)
+        setVisibleManaged(paneStep3, step == 2)
 
         btnBack.isDisable = step == 0
-        btnNext.isVisible = step < 2; btnNext.isManaged = step < 2
-        btnCreate.isVisible = step == 2; btnCreate.isManaged = step == 2
+        setVisibleManaged(btnNext, step < 2)
+        setVisibleManaged(btnCreate, step == 2)
 
         lblStep.text = "STEP ${step + 1}/3"
 
@@ -227,13 +215,12 @@ class DeployBotWizardController {
     private fun validateStep1(): Boolean {
         val name = txtBotName.text.trim()
         val symbol = cboSymbol.editor.text.trim()
-
         if (name.isBlank()) return err("Bot name is required.")
-        if (!name.matches(Regex("^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$")))
-            return err("Bot name must be 3–32 chars (letters, digits, _ or -).")
+        if (!name.matches(botNameRegex))
+            return err("Bot name must be 3-32 chars (letters, digits, _ or -).")
 
         if (symbol.isBlank()) return err("Symbol is required (e.g. BTCUSDT).")
-        if (!symbol.matches(Regex("^[A-Z0-9]{6,16}$")))
+        if (!symbol.matches(symbolRegex))
             return err("Symbol must be uppercase like BTCUSDT.")
 
         if (cboExchange.value.isNullOrBlank()) return err("Exchange is required.")
@@ -241,7 +228,7 @@ class DeployBotWizardController {
     }
 
     private fun validateStep2(): Boolean {
-        if (cboStrategy.value.displayName.isBlank()) return err("Strategy is required.")
+        if (cboStrategy.value?.displayName.isNullOrBlank()) return err("Strategy is required.")
         if (cboPreset.value.isNullOrBlank()) return err("Preset is required.")
         return true
     }
@@ -267,12 +254,13 @@ class DeployBotWizardController {
             if (!ok) return
         }
 
+        val strategyName = cboStrategy.value?.displayName ?: ""
         val cfg = BotConfig(
             name = txtBotName.text.trim(),
             symbol = cboSymbol.editor.text.trim(),
             mode = currentMode(),
             exchange = cboExchange.value.trim(),
-            strategy = cboStrategy.value.displayName,
+            strategy = strategyName,
             preset = cboPreset.value.trim(),
             loadDefaults = chkLoadDefaults.isSelected,
             allowShort = chkAllowShort.isSelected,
@@ -290,14 +278,15 @@ class DeployBotWizardController {
     }
 
     private fun updateSummaries() {
-        val s = cboStrategy.value ?: ""
-        val p = cboPreset.value ?: ""
+        val strategy = cboStrategy.value
+        val strategyName = strategy?.displayName ?: "(strategy)"
+        val preset = cboPreset.value ?: "(preset)"
         val allowShort = if (chkAllowShort.isSelected) "YES" else "NO"
         val defaults = if (chkLoadDefaults.isSelected) "YES" else "NO"
 
         txtLogicSummary.text =
-            "Strategy: $s\nPreset: $p\nLoad defaults: $defaults\nShorting enabled: $allowShort\n\n" +
-                    when (s) {
+            "Strategy: $strategyName\nPreset: $preset\nLoad defaults: $defaults\nShorting enabled: $allowShort\n\n" +
+                    when (strategyName) {
                         "EMA Pullback" -> "Looks for pullbacks to EMA in confirmed trends; filtered by volatility/regime gates."
                         "ATR Donchian" -> "Looks for Donchian breakouts; filtered by ATR volatility and liquidity gates."
                         else -> ""
@@ -312,7 +301,7 @@ class DeployBotWizardController {
         val d = txtDailyLoss.text.trim().ifBlank { "?" }
 
         txtDeploySummary.text =
-            "Deploy $name on $symbol in $mode mode using $s ($p).\n" +
+            "Deploy $name on $symbol in $mode mode using $strategyName ($preset).\n" +
                     "Risk profile: $riskProfile. Risk $r%/trade, max $maxPos positions.\n" +
                     "Trading halts if daily loss exceeds $d%."
     }
@@ -325,7 +314,22 @@ class DeployBotWizardController {
         lblError.text = ""
     }
 
+    private fun setVisibleManaged(node: javafx.scene.Node, visible: Boolean) {
+        node.isVisible = visible
+        node.isManaged = visible
+    }
+
     private fun close() {
         lblStep.scene?.window?.hide()
+    }
+
+    override fun setupObserver() {
+        uiScope.launch {
+            viewModel.symbols.collect { symbols ->
+                println("Symbols: $symbols")
+                cboSymbol.items.setAll(symbols)
+                cboSymbol.editor.text = symbols.firstOrNull()
+            }
+        }
     }
 }

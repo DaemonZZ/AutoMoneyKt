@@ -150,8 +150,7 @@ class MarketAnalyzerController : BaseController() {
     /* =========================
        Init
        ========================= */
-    @FXML
-    fun initialize() {
+    override fun initUi() {
         setupTopBar()
         setupSymbolList() // ✅ checkbox list
         setupTable()
@@ -174,6 +173,10 @@ class MarketAnalyzerController : BaseController() {
         autoPickTopVolumeRadio.isSelected = true
 
         uiScope.launch { loadSymbols() }
+    }
+
+    override fun fetchData() {
+
     }
 
     /* =========================
@@ -680,6 +683,9 @@ class MarketAnalyzerController : BaseController() {
 
             else -> emptyList()
         }
+    }
+
+    override fun setupObserver() {
     }
 
 }

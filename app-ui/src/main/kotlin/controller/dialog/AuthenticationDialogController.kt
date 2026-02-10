@@ -19,9 +19,8 @@ class AuthenticationDialogController : BaseController() {
         this.dialog = dialog
     }
 
-    @FXML
-    fun initialize() {
-        SystemConfig.auth?.let {
+    override fun initUi() {
+        SystemConfig.auth.let {
             tfApiKey.text = it.apiKey
             tfApiSecret.text = it.secret
         }
@@ -31,5 +30,11 @@ class AuthenticationDialogController : BaseController() {
             dialog?.result = true
             dialog?.close()
         }
+    }
+
+    override fun fetchData() {
+    }
+
+    override fun setupObserver() {
     }
 }

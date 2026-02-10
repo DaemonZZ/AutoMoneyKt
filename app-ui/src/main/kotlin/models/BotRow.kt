@@ -8,18 +8,17 @@ class BotRow(
     name: String,
     symbol: String,
     mode: String,
-    status: String
+    status: BotStatus
 ) {
     val botIdProperty = SimpleStringProperty(botId)
     val nameProperty = SimpleStringProperty(name)
     val symbolProperty = SimpleStringProperty(symbol)
     val modeProperty = SimpleStringProperty(mode)
-    val statusProperty = SimpleStringProperty(status)
+    val statusProperty = SimpleStringProperty(status.name)
 
     // optional: for sort/filter later
     val statusEnumProperty = SimpleObjectProperty<BotStatus>(BotStatus.IDLE)
 
-    // detail metrics (optional if you want show in table)
     val pnlUsdProperty = SimpleStringProperty("--")
     val tradesProperty = SimpleIntegerProperty(0)
     val updatedProperty = SimpleStringProperty("--")
